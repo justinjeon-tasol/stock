@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
+import { SharedRealtimeProvider } from '@/providers/SharedRealtimeProvider'
 
 export const metadata: Metadata = {
   title: 'StockAgent — 자동매매 대시보드',
@@ -16,16 +17,18 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="bg-[#0a0a0f] text-[#f0f0f8]">
-        <Sidebar />
-        <Header />
-        <main
-          className="min-h-screen pt-16 transition-all duration-200"
-          style={{ paddingLeft: '240px' }}
-        >
-          <div className="p-6">
-            {children}
-          </div>
-        </main>
+        <SharedRealtimeProvider>
+          <Sidebar />
+          <Header />
+          <main
+            className="min-h-screen pt-16 transition-all duration-200"
+            style={{ paddingLeft: '240px' }}
+          >
+            <div className="p-6">
+              {children}
+            </div>
+          </main>
+        </SharedRealtimeProvider>
       </body>
     </html>
   )

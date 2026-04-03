@@ -50,3 +50,13 @@ frontend/build/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Claude Code
+.claude/worktrees/
+.claude/settings.local.json
+
+# npm cache
+npm-cache/
+
+# 임시 메모
+frontend_fix*.md

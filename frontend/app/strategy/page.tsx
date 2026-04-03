@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, TrendingUp, TrendingDown, Minus, BarChart3, Target, Zap } from 'lucide-react'
+import { formatKRW } from '@/lib/format'
 
-function fmt(n: number): string {
+function fmtNum(n: number): string {
   return Math.round(n).toLocaleString('ko-KR')
 }
 
@@ -185,8 +186,8 @@ export default function StrategyPage() {
                       {r.avg_win_rate}%
                     </td>
                     <td className="py-2.5 px-3 text-xs font-mono text-[#4ade80]">+{r.avg_return}%</td>
-                    <td className="py-2.5 px-3 text-xs font-mono text-[#fbbf24]">{fmt(r.total_edge)}</td>
-                    <td className="py-2.5 px-3 text-xs text-[#555570]">{fmt(r.total_trades)}</td>
+                    <td className="py-2.5 px-3 text-xs font-mono text-[#fbbf24]">{fmtNum(r.total_edge)}</td>
+                    <td className="py-2.5 px-3 text-xs text-[#555570]">{fmtNum(r.total_trades)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -307,21 +308,21 @@ export default function StrategyPage() {
                     <div className="grid grid-cols-4 gap-3 text-xs">
                       <div>
                         <p className="text-[#555570]">매입가</p>
-                        <p className="font-mono text-[#8888a8]">{p.avg_price ? fmt(p.avg_price) : '-'}원</p>
+                        <p className="font-mono text-[#8888a8]">{p.avg_price ? formatKRW(p.avg_price) : '-'}</p>
                       </div>
                       <div>
                         <p className="text-[#555570]">현재가</p>
                         <p className="font-mono" style={{ color: p.pnl_pct >= 0 ? '#4ade80' : '#f87171' }}>
-                          {p.current_price ? fmt(p.current_price) : '-'}원 ({p.pnl_pct >= 0 ? '+' : ''}{p.pnl_pct}%)
+                          {p.current_price ? formatKRW(p.current_price) : '-'} ({p.pnl_pct >= 0 ? '+' : ''}{p.pnl_pct}%)
                         </p>
                       </div>
                       <div>
                         <p className="text-[#555570]">1주 목표</p>
-                        <p className="font-mono text-[#8888a8]">{p.target_1w ? fmt(p.target_1w) + '원' : '-'}</p>
+                        <p className="font-mono text-[#8888a8]">{p.target_1w ? formatKRW(p.target_1w) : '-'}</p>
                       </div>
                       <div>
                         <p className="text-[#555570]">1개월 목표</p>
-                        <p className="font-mono text-[#8888a8]">{p.target_1m ? fmt(p.target_1m) + '원' : '-'}</p>
+                        <p className="font-mono text-[#8888a8]">{p.target_1m ? formatKRW(p.target_1m) : '-'}</p>
                       </div>
                     </div>
 
@@ -337,7 +338,7 @@ export default function StrategyPage() {
                       </div>
                       <div>
                         <p className="text-[#555570]">손절가</p>
-                        <p className="font-mono text-[#f87171]">{p.sl_price ? fmt(p.sl_price) + '원' : '-'} ({p.sl_pct}%)</p>
+                        <p className="font-mono text-[#f87171]">{p.sl_price ? formatKRW(p.sl_price) : '-'} ({p.sl_pct}%)</p>
                       </div>
                       <div>
                         <p className="text-[#555570]">신뢰도</p>
@@ -357,7 +358,7 @@ export default function StrategyPage() {
                                 s.status === 'EXECUTED' ? 'bg-[#052e16] text-[#4ade80]' :
                                 s.status === 'PENDING' ? 'bg-[#1e1e2a] text-[#8888a8]' : 'bg-[#1e1e2a] text-[#555570]'
                               }`}>{s.status === 'EXECUTED' ? '완료' : '대기'}</span>
-                              <span className="font-mono text-[#f0f0f8]">{fmt(s.trigger_price)}원</span>
+                              <span className="font-mono text-[#f0f0f8]">{formatKRW(s.trigger_price)}</span>
                               <span className="font-mono" style={{ color: s.trigger_vs_avg >= 0 ? '#4ade80' : '#f87171' }}>
                                 (매입{s.trigger_vs_avg >= 0 ? '+' : ''}{s.trigger_vs_avg}%)
                               </span>

@@ -1,9 +1,20 @@
+import dynamic from 'next/dynamic'
 import { PhaseCard } from '@/components/dashboard/PhaseCard'
 import { PositionSummaryCard } from '@/components/dashboard/PositionSummaryCard'
 import { AgentStatusSummary } from '@/components/dashboard/AgentStatusSummary'
 import { AccountSummaryCard } from '@/components/dashboard/AccountSummaryCard'
-import { ForeignNetChart } from '@/components/dashboard/ForeignNetChart'
 import { RecentSignalList } from '@/components/dashboard/RecentSignalList'
+
+const ForeignNetChart = dynamic(
+  () => import('@/components/dashboard/ForeignNetChart')
+    .then(mod => ({ default: mod.ForeignNetChart })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 animate-pulse bg-[#12121a] rounded-lg" />
+    ),
+  }
+)
 
 export default function DashboardPage() {
   return (

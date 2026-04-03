@@ -82,6 +82,8 @@ def save_trade(order_result: dict, signal: dict) -> Optional[str]:
         first_id = None
         for result in ok_results:
             record_id = str(uuid.uuid4())
+            raw_pct = result.get("result_pct")
+            result_pct = float(raw_pct) if raw_pct is not None else (None if action == "BUY" else 0.0)
             row = {
                 "id":          record_id,
                 "order_id":    order_id,
@@ -91,7 +93,7 @@ def save_trade(order_result: dict, signal: dict) -> Optional[str]:
                 "quantity":    int(result.get("quantity", 1)),
                 "price":       int(result.get("price", 0)),
                 "phase":       phase,
-                "result_pct":  float(result.get("result_pct", 0.0)),
+                "result_pct":  result_pct,
                 "mode":        mode,
                 "strategy_id": result.get("strategy_id") or strategy_id,
             }

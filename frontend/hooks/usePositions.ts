@@ -1,10 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useMemo } from 'react'
+import { useSharedRealtime } from '@/providers/SharedRealtimeProvider'
 import type { Position, PositionStatus } from '@/lib/types'
-
-const POLL_INTERVAL_MS = 60_000
 
 interface UsePositionsOptions {
   status?: PositionStatus
@@ -18,58 +16,19 @@ interface UsePositionsResult {
 }
 
 export function usePositions(options: UsePositionsOptions = {}): UsePositionsResult {
-  const [positions, setPositions] = useState<Position[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const initializedRef = useRef(false)
-  const channelId = useRef(`positions_${Date.now()}_${Math.random()}`).current
+  const { positions: allPositions, lastUpdated, refresh } = useSharedRealtime()
 
-  const fetchPositions = useCallback(async () => {
-    if (!initializedRef.current) setLoading(true)
-    setError(null)
+  const positions = useMemo(() => {
+    if (!options.status) return allPositions
+    return allPositions.filter((p) => p.status === options.status)
+  }, [allPositions, options.status])
 
-    let query = supabase
-      .from('positions')
-      .select('*')
-      .order('entry_time', { ascending: false })
-
-    if (options.status) {
-      query = query.eq('status', options.status)
-    }
-
-    const { data, error: err } = await query
-
-    if (err) {
-      setError(err.message)
-      setPositions([])
-    } else {
-      setPositions((data ?? []) as Position[])
-    }
-
-    initializedRef.current = true
-    setLoading(false)
-  }, [options.status])
-
-  useEffect(() => {
-    initializedRef.current = false
-    fetchPositions()
-
-    const channel = supabase.channel(`${channelId}_${options.status ?? 'all'}`)
-    channel.on('postgres_changes', { event: '*', schema: 'public', table: 'positions' },
-      () => { fetchPositions() }
-    )
-    channel.subscribe()
-
-    timerRef.current = setInterval(fetchPositions, POLL_INTERVAL_MS)
-
-    return () => {
-      supabase.removeChannel(channel)
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [fetchPositions, options.status, channelId])
-
-  return { positions, loading, error, refetch: fetchPositions }
+  return {
+    positions,
+    loading: allPositions === null,
+    error: null,
+    refetch: () => { refresh('positions') },
+  }
 }
 
 // OPEN 포지션 요약 통계

@@ -36,6 +36,32 @@ export function formatPrice(price: number): string {
   return price.toLocaleString('ko-KR') + '원'
 }
 
+// 원 단위 → 만원/억원 (상세 표시)
+export function formatKRW(won: number): string {
+  const abs = Math.abs(won)
+  const sign = won < 0 ? '-' : ''
+  if (abs >= 1e8) {
+    const eok = abs / 1e8
+    return `${sign}${eok.toFixed(eok >= 10 ? 0 : 1)}억원`
+  }
+  if (abs >= 1e4) {
+    const man = abs / 1e4
+    return `${sign}${man.toFixed(man >= 100 ? 0 : 1)}만원`
+  }
+  return `${sign}${abs.toLocaleString('ko-KR')}원`
+}
+
+// 주문 상태 표시
+export function formatOrderStatus(status: string): string {
+  const map: Record<string, string> = {
+    '체결': '체결완료',
+    '미체결': '미체결',
+    '취소': '취소됨',
+    '정정': '정정됨',
+  }
+  return map[status] || status
+}
+
 // 경과 시간 (N초 전 / N분 전 / N시간 전)
 export function formatTimeAgo(isoString: string): string {
   const now = Date.now()
