@@ -1,0 +1,41 @@
+{
+  "id": "STR_B6_반등",
+  "group": "데이터기반",
+  "phase": "대폭락장",
+  "description": "대폭락장에서 낙폭과대·과매도 종목의 단기 기술적 반등을 포착한다. RSI < 25 + 52주 낙폭 > 40% + MDD 80% 이상 소진 종목만 대상. 최대 15% 소규모 투자.",
+  "conditions": {
+    "진입": "RSI_14 < 25 AND 52주 고점 대비 낙폭 < -40% AND MDD 소진율 > 80% AND 대형우량주 (score ≥ 4)",
+    "청산": "익절 +3.0% 또는 손절 -2.0% (초단기 당일 청산 원칙)",
+    "제외": "AVOID 신호(VIX 급등·달러 급등) 발생 시 진입 보류 / CRITICAL 이슈 시 전량 취소"
+  },
+  "performance": {
+    "backtest_win_rate": 0.0,
+    "backtest_return_pct": 0.0,
+    "real_win_rate": 0.0,
+    "real_return_pct": 0.0,
+    "mdd": 0.0,
+    "status": "백테스팅중",
+    "backtest_trade_count": 0
+  },
+  "analysis": {
+    "concept": "공포 극단 구간에서 기술적 반등 포착. 추세 추종이 아닌 평균 회귀 전략.",
+    "risk_note": "대폭락장에서 추가 하락 가능성 존재. 소규모(15%) 투자, 초단기 보유 필수.",
+    "scoring_criteria": {
+      "rsi_below_25": "+1",
+      "rsi_below_20": "+1 (추가)",
+      "drawdown_below_40pct": "+1",
+      "drawdown_below_50pct": "+1 (추가)",
+      "mdd_utilization_above_80pct": "+1",
+      "mdd_utilization_above_90pct": "+1 (추가)",
+      "is_quality_large_cap": "+1",
+      "min_score_to_enter": 4
+    }
+  },
+  "compatible": [
+    "STR_B6"
+  ],
+  "incompatible": [],
+  "created_at": "2026-04-01",
+  "updated_at": "2026-04-02",
+  "holding_period": "초단기"
+}

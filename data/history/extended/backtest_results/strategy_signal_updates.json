@@ -1,0 +1,1566 @@
+[
+  {
+    "indicator": "semi_soxx",
+    "best_threshold": 3.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6452,
+    "best_avg_ret": 1.097,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "005930",
+        "name": "삼성전자",
+        "win_rate": 0.5939,
+        "avg_ret": 1.5455,
+        "n": 229
+      },
+      {
+        "code": "000660",
+        "name": "SK하이닉스",
+        "win_rate": 0.5657,
+        "avg_ret": 0.9858,
+        "n": 251
+      },
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.557,
+        "avg_ret": 1.6431,
+        "n": 149
+      },
+      {
+        "code": "024110",
+        "name": "기업은행",
+        "win_rate": 0.5533,
+        "avg_ret": 0.6324,
+        "n": 338
+      },
+      {
+        "code": "033780",
+        "name": "KT&G",
+        "win_rate": 0.5635,
+        "avg_ret": 0.6168,
+        "n": 323
+      },
+      {
+        "code": "079550",
+        "name": "LIG넥스원",
+        "win_rate": 0.5625,
+        "avg_ret": 0.9363,
+        "n": 176
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5869,
+        "avg_ret": 0.7436,
+        "n": 213
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.5789,
+        "avg_ret": 1.1399,
+        "n": 133
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.6,
+        "avg_ret": 0.7407,
+        "n": 185
+      },
+      {
+        "code": "138040",
+        "name": "메리츠금융지주",
+        "win_rate": 0.5662,
+        "avg_ret": 0.9209,
+        "n": 136
+      }
+    ]
+  },
+  {
+    "indicator": "robotics",
+    "best_threshold": 2.5,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6863,
+    "best_avg_ret": 1.6412,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.5543,
+        "avg_ret": 1.715,
+        "n": 175
+      },
+      {
+        "code": "052690",
+        "name": "한전기술",
+        "win_rate": 0.5638,
+        "avg_ret": 2.4501,
+        "n": 94
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5728,
+        "avg_ret": 2.0664,
+        "n": 103
+      },
+      {
+        "code": "012450",
+        "name": "한화에어로스페이스",
+        "win_rate": 0.5631,
+        "avg_ret": 0.9579,
+        "n": 222
+      },
+      {
+        "code": "047810",
+        "name": "한국항공우주",
+        "win_rate": 0.5588,
+        "avg_ret": 1.024,
+        "n": 204
+      },
+      {
+        "code": "000720",
+        "name": "현대건설",
+        "win_rate": 0.5765,
+        "avg_ret": 2.379,
+        "n": 85
+      },
+      {
+        "code": "005380",
+        "name": "현대차",
+        "win_rate": 0.5648,
+        "avg_ret": 1.0202,
+        "n": 193
+      },
+      {
+        "code": "241560",
+        "name": "두산밥캣",
+        "win_rate": 0.55,
+        "avg_ret": 0.6951,
+        "n": 280
+      },
+      {
+        "code": "000880",
+        "name": "한화",
+        "win_rate": 0.5909,
+        "avg_ret": 2.0923,
+        "n": 88
+      },
+      {
+        "code": "034020",
+        "name": "두산에너빌리티",
+        "win_rate": 0.5729,
+        "avg_ret": 1.7975,
+        "n": 96
+      }
+    ]
+  },
+  {
+    "indicator": "nasdaq_fut",
+    "best_threshold": 3.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6923,
+    "best_avg_ret": 1.672,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "052690",
+        "name": "한전기술",
+        "win_rate": 0.5522,
+        "avg_ret": 2.1703,
+        "n": 134
+      },
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.5644,
+        "avg_ret": 2.1998,
+        "n": 101
+      },
+      {
+        "code": "241560",
+        "name": "두산밥캣",
+        "win_rate": 0.5581,
+        "avg_ret": 2.2508,
+        "n": 86
+      },
+      {
+        "code": "011790",
+        "name": "SKC",
+        "win_rate": 0.5572,
+        "avg_ret": 0.9145,
+        "n": 201
+      },
+      {
+        "code": "047810",
+        "name": "한국항공우주",
+        "win_rate": 0.5676,
+        "avg_ret": 2.4726,
+        "n": 74
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.6017,
+        "avg_ret": 1.4885,
+        "n": 118
+      },
+      {
+        "code": "006400",
+        "name": "삼성SDI",
+        "win_rate": 0.5665,
+        "avg_ret": 0.8096,
+        "n": 203
+      },
+      {
+        "code": "079550",
+        "name": "LIG넥스원",
+        "win_rate": 0.6032,
+        "avg_ret": 2.5196,
+        "n": 63
+      },
+      {
+        "code": "005490",
+        "name": "POSCO홀딩스",
+        "win_rate": 0.5527,
+        "avg_ret": 0.5041,
+        "n": 313
+      },
+      {
+        "code": "042700",
+        "name": "한미반도체",
+        "win_rate": 0.557,
+        "avg_ret": 1.9903,
+        "n": 79
+      }
+    ]
+  },
+  {
+    "indicator": "defense",
+    "best_threshold": 3.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.7222,
+    "best_avg_ret": 1.9182,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "047810",
+        "name": "한국항공우주",
+        "win_rate": 0.5614,
+        "avg_ret": 1.6775,
+        "n": 171
+      },
+      {
+        "code": "000880",
+        "name": "한화",
+        "win_rate": 0.5509,
+        "avg_ret": 1.4355,
+        "n": 167
+      },
+      {
+        "code": "034020",
+        "name": "두산에너빌리티",
+        "win_rate": 0.5766,
+        "avg_ret": 1.8394,
+        "n": 111
+      },
+      {
+        "code": "006800",
+        "name": "미래에셋증권",
+        "win_rate": 0.5714,
+        "avg_ret": 1.7631,
+        "n": 98
+      },
+      {
+        "code": "247540",
+        "name": "에코프로비엠",
+        "win_rate": 0.5769,
+        "avg_ret": 1.2816,
+        "n": 130
+      },
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.5698,
+        "avg_ret": 1.8607,
+        "n": 86
+      },
+      {
+        "code": "259960",
+        "name": "크래프톤",
+        "win_rate": 0.6055,
+        "avg_ret": 1.3836,
+        "n": 109
+      },
+      {
+        "code": "047050",
+        "name": "포스코인터내셔널",
+        "win_rate": 0.5505,
+        "avg_ret": 0.7309,
+        "n": 198
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5827,
+        "avg_ret": 0.5177,
+        "n": 278
+      },
+      {
+        "code": "000100",
+        "name": "유한양행",
+        "win_rate": 0.5686,
+        "avg_ret": 1.3725,
+        "n": 102
+      }
+    ]
+  },
+  {
+    "indicator": "tech_xlk",
+    "best_threshold": 3.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6531,
+    "best_avg_ret": 1.7799,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.581,
+        "avg_ret": 2.3945,
+        "n": 105
+      },
+      {
+        "code": "047050",
+        "name": "포스코인터내셔널",
+        "win_rate": 0.5876,
+        "avg_ret": 1.0249,
+        "n": 194
+      },
+      {
+        "code": "079550",
+        "name": "LIG넥스원",
+        "win_rate": 0.5867,
+        "avg_ret": 2.4479,
+        "n": 75
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5726,
+        "avg_ret": 0.4053,
+        "n": 372
+      },
+      {
+        "code": "042700",
+        "name": "한미반도체",
+        "win_rate": 0.5556,
+        "avg_ret": 0.6793,
+        "n": 207
+      },
+      {
+        "code": "052690",
+        "name": "한전기술",
+        "win_rate": 0.5625,
+        "avg_ret": 2.8406,
+        "n": 48
+      },
+      {
+        "code": "051910",
+        "name": "LG화학",
+        "win_rate": 0.5537,
+        "avg_ret": 1.0566,
+        "n": 121
+      },
+      {
+        "code": "068270",
+        "name": "셀트리온",
+        "win_rate": 0.5556,
+        "avg_ret": 0.5422,
+        "n": 234
+      },
+      {
+        "code": "180640",
+        "name": "한진칼",
+        "win_rate": 0.5854,
+        "avg_ret": 3.0089,
+        "n": 41
+      },
+      {
+        "code": "047810",
+        "name": "한국항공우주",
+        "win_rate": 0.5833,
+        "avg_ret": 2.4879,
+        "n": 48
+      }
+    ]
+  },
+  {
+    "indicator": "nasdaq",
+    "best_threshold": 2.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6484,
+    "best_avg_ret": 0.5421,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "047050",
+        "name": "포스코인터내셔널",
+        "win_rate": 0.5597,
+        "avg_ret": 0.8834,
+        "n": 268
+      },
+      {
+        "code": "034020",
+        "name": "두산에너빌리티",
+        "win_rate": 0.5519,
+        "avg_ret": 1.0206,
+        "n": 183
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5743,
+        "avg_ret": 1.7866,
+        "n": 101
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.6005,
+        "avg_ret": 0.4718,
+        "n": 368
+      },
+      {
+        "code": "042700",
+        "name": "한미반도체",
+        "win_rate": 0.5612,
+        "avg_ret": 0.8658,
+        "n": 196
+      },
+      {
+        "code": "180640",
+        "name": "한진칼",
+        "win_rate": 0.5882,
+        "avg_ret": 3.1828,
+        "n": 51
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.562,
+        "avg_ret": 1.2699,
+        "n": 121
+      },
+      {
+        "code": "005940",
+        "name": "NH투자증권",
+        "win_rate": 0.5563,
+        "avg_ret": 0.9281,
+        "n": 151
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5683,
+        "avg_ret": 0.5081,
+        "n": 271
+      },
+      {
+        "code": "352820",
+        "name": "하이브",
+        "win_rate": 0.5562,
+        "avg_ret": 0.7559,
+        "n": 169
+      }
+    ]
+  },
+  {
+    "indicator": "clean_energy",
+    "best_threshold": -3.0,
+    "best_direction": "SELL_SIG",
+    "best_win_rate": 0.6471,
+    "best_avg_ret": 1.8819,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "006800",
+        "name": "미래에셋증권",
+        "win_rate": 0.5736,
+        "avg_ret": 1.7386,
+        "n": 129
+      },
+      {
+        "code": "138040",
+        "name": "메리츠금융지주",
+        "win_rate": 0.5549,
+        "avg_ret": 1.2135,
+        "n": 173
+      },
+      {
+        "code": "267250",
+        "name": "현대중공업",
+        "win_rate": 0.5515,
+        "avg_ret": 1.3121,
+        "n": 136
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5747,
+        "avg_ret": 0.3662,
+        "n": 435
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5662,
+        "avg_ret": 0.344,
+        "n": 438
+      },
+      {
+        "code": "051900",
+        "name": "LG생활건강",
+        "win_rate": 0.5546,
+        "avg_ret": 1.0005,
+        "n": 119
+      },
+      {
+        "code": "034730",
+        "name": "SK",
+        "win_rate": 0.5739,
+        "avg_ret": 0.999,
+        "n": 115
+      },
+      {
+        "code": "007070",
+        "name": "GS리테일",
+        "win_rate": 0.5541,
+        "avg_ret": 1.3184,
+        "n": 74
+      },
+      {
+        "code": "079550",
+        "name": "LIG넥스원",
+        "win_rate": 0.5514,
+        "avg_ret": 0.9016,
+        "n": 107
+      },
+      {
+        "code": "052690",
+        "name": "한전기술",
+        "win_rate": 0.5575,
+        "avg_ret": 0.8432,
+        "n": 113
+      }
+    ]
+  },
+  {
+    "indicator": "battery",
+    "best_threshold": -2.5,
+    "best_direction": "SELL_SIG",
+    "best_win_rate": 0.6529,
+    "best_avg_ret": 0.6179,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "079550",
+        "name": "LIG넥스원",
+        "win_rate": 0.5638,
+        "avg_ret": 1.4952,
+        "n": 149
+      },
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.5652,
+        "avg_ret": 1.5623,
+        "n": 138
+      },
+      {
+        "code": "003850",
+        "name": "보령",
+        "win_rate": 0.5917,
+        "avg_ret": 1.6777,
+        "n": 120
+      },
+      {
+        "code": "042700",
+        "name": "한미반도체",
+        "win_rate": 0.5781,
+        "avg_ret": 1.4173,
+        "n": 128
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.6417,
+        "avg_ret": 0.7264,
+        "n": 240
+      },
+      {
+        "code": "036570",
+        "name": "엔씨소프트",
+        "win_rate": 0.5562,
+        "avg_ret": 0.8875,
+        "n": 178
+      },
+      {
+        "code": "034730",
+        "name": "SK",
+        "win_rate": 0.5551,
+        "avg_ret": 0.5799,
+        "n": 254
+      },
+      {
+        "code": "009150",
+        "name": "삼성전기",
+        "win_rate": 0.5868,
+        "avg_ret": 1.1551,
+        "n": 121
+      },
+      {
+        "code": "028050",
+        "name": "삼성엔지니어링",
+        "win_rate": 0.5702,
+        "avg_ret": 1.1483,
+        "n": 114
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5644,
+        "avg_ret": 0.2706,
+        "n": 466
+      }
+    ]
+  },
+  {
+    "indicator": "dow",
+    "best_threshold": 2.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.7297,
+    "best_avg_ret": 2.3137,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "000100",
+        "name": "유한양행",
+        "win_rate": 0.5816,
+        "avg_ret": 1.494,
+        "n": 141
+      },
+      {
+        "code": "047810",
+        "name": "한국항공우주",
+        "win_rate": 0.5714,
+        "avg_ret": 1.9725,
+        "n": 105
+      },
+      {
+        "code": "005930",
+        "name": "삼성전자",
+        "win_rate": 0.5503,
+        "avg_ret": 0.6793,
+        "n": 298
+      },
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.5882,
+        "avg_ret": 2.0926,
+        "n": 85
+      },
+      {
+        "code": "028050",
+        "name": "삼성엔지니어링",
+        "win_rate": 0.5625,
+        "avg_ret": 0.9666,
+        "n": 176
+      },
+      {
+        "code": "006400",
+        "name": "삼성SDI",
+        "win_rate": 0.5823,
+        "avg_ret": 1.0559,
+        "n": 158
+      },
+      {
+        "code": "180640",
+        "name": "한진칼",
+        "win_rate": 0.5682,
+        "avg_ret": 3.678,
+        "n": 44
+      },
+      {
+        "code": "000880",
+        "name": "한화",
+        "win_rate": 0.5789,
+        "avg_ret": 1.6279,
+        "n": 95
+      },
+      {
+        "code": "034020",
+        "name": "두산에너빌리티",
+        "win_rate": 0.5889,
+        "avg_ret": 1.6719,
+        "n": 90
+      },
+      {
+        "code": "021240",
+        "name": "코웨이",
+        "win_rate": 0.5663,
+        "avg_ret": 1.7295,
+        "n": 83
+      }
+    ]
+  },
+  {
+    "indicator": "sp500",
+    "best_threshold": -2.5,
+    "best_direction": "SELL_SIG",
+    "best_win_rate": 0.6863,
+    "best_avg_ret": 1.3853,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.567,
+        "avg_ret": 2.1034,
+        "n": 97
+      },
+      {
+        "code": "241560",
+        "name": "두산밥캣",
+        "win_rate": 0.5693,
+        "avg_ret": 0.8795,
+        "n": 202
+      },
+      {
+        "code": "180640",
+        "name": "한진칼",
+        "win_rate": 0.5625,
+        "avg_ret": 3.2403,
+        "n": 48
+      },
+      {
+        "code": "028050",
+        "name": "삼성엔지니어링",
+        "win_rate": 0.5859,
+        "avg_ret": 1.2116,
+        "n": 128
+      },
+      {
+        "code": "298050",
+        "name": "효성첨단소재",
+        "win_rate": 0.5714,
+        "avg_ret": 1.8838,
+        "n": 77
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5513,
+        "avg_ret": 1.7808,
+        "n": 78
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5852,
+        "avg_ret": 0.6012,
+        "n": 229
+      },
+      {
+        "code": "000100",
+        "name": "유한양행",
+        "win_rate": 0.5567,
+        "avg_ret": 1.3902,
+        "n": 97
+      },
+      {
+        "code": "052690",
+        "name": "한전기술",
+        "win_rate": 0.6226,
+        "avg_ret": 2.4693,
+        "n": 53
+      },
+      {
+        "code": "079550",
+        "name": "LIG넥스원",
+        "win_rate": 0.5565,
+        "avg_ret": 1.1175,
+        "n": 115
+      }
+    ]
+  },
+  {
+    "indicator": "energy_xle",
+    "best_threshold": -3.0,
+    "best_direction": "SELL_SIG",
+    "best_win_rate": 0.661,
+    "best_avg_ret": 1.5549,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "028050",
+        "name": "삼성엔지니어링",
+        "win_rate": 0.555,
+        "avg_ret": 1.0508,
+        "n": 191
+      },
+      {
+        "code": "207940",
+        "name": "삼성바이오로직스",
+        "win_rate": 0.5652,
+        "avg_ret": 1.8072,
+        "n": 92
+      },
+      {
+        "code": "047050",
+        "name": "포스코인터내셔널",
+        "win_rate": 0.5618,
+        "avg_ret": 0.8684,
+        "n": 178
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.567,
+        "avg_ret": 0.474,
+        "n": 291
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5652,
+        "avg_ret": 0.4983,
+        "n": 276
+      },
+      {
+        "code": "066570",
+        "name": "LG전자",
+        "win_rate": 0.5523,
+        "avg_ret": 0.7827,
+        "n": 172
+      },
+      {
+        "code": "011790",
+        "name": "SKC",
+        "win_rate": 0.5579,
+        "avg_ret": 0.6233,
+        "n": 190
+      },
+      {
+        "code": "377300",
+        "name": "카카오페이",
+        "win_rate": 0.55,
+        "avg_ret": 1.1284,
+        "n": 100
+      },
+      {
+        "code": "036570",
+        "name": "엔씨소프트",
+        "win_rate": 0.5514,
+        "avg_ret": 0.5938,
+        "n": 185
+      },
+      {
+        "code": "352820",
+        "name": "하이브",
+        "win_rate": 0.6,
+        "avg_ret": 1.7017,
+        "n": 55
+      }
+    ]
+  },
+  {
+    "indicator": "copper",
+    "best_threshold": 3.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6471,
+    "best_avg_ret": 2.0109,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "028050",
+        "name": "삼성엔지니어링",
+        "win_rate": 0.5696,
+        "avg_ret": 1.2566,
+        "n": 158
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5652,
+        "avg_ret": 1.7216,
+        "n": 115
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.591,
+        "avg_ret": 0.5569,
+        "n": 335
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5613,
+        "avg_ret": 0.4148,
+        "n": 408
+      },
+      {
+        "code": "052690",
+        "name": "한전기술",
+        "win_rate": 0.6,
+        "avg_ret": 1.8471,
+        "n": 75
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.5646,
+        "avg_ret": 0.8227,
+        "n": 147
+      },
+      {
+        "code": "078930",
+        "name": "GS",
+        "win_rate": 0.5608,
+        "avg_ret": 0.7441,
+        "n": 148
+      },
+      {
+        "code": "267250",
+        "name": "현대중공업",
+        "win_rate": 0.5581,
+        "avg_ret": 2.0056,
+        "n": 43
+      },
+      {
+        "code": "086790",
+        "name": "하나금융지주",
+        "win_rate": 0.5556,
+        "avg_ret": 0.5287,
+        "n": 162
+      },
+      {
+        "code": "241560",
+        "name": "두산밥캣",
+        "win_rate": 0.5641,
+        "avg_ret": 1.6784,
+        "n": 39
+      }
+    ]
+  },
+  {
+    "indicator": "sp500_fut",
+    "best_threshold": -2.5,
+    "best_direction": "SELL_SIG",
+    "best_win_rate": 0.6604,
+    "best_avg_ret": 1.2869,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.56,
+        "avg_ret": 1.9485,
+        "n": 100
+      },
+      {
+        "code": "241560",
+        "name": "두산밥캣",
+        "win_rate": 0.5572,
+        "avg_ret": 0.826,
+        "n": 201
+      },
+      {
+        "code": "047810",
+        "name": "한국항공우주",
+        "win_rate": 0.5797,
+        "avg_ret": 2.295,
+        "n": 69
+      },
+      {
+        "code": "021240",
+        "name": "코웨이",
+        "win_rate": 0.5846,
+        "avg_ret": 2.4245,
+        "n": 65
+      },
+      {
+        "code": "180640",
+        "name": "한진칼",
+        "win_rate": 0.5593,
+        "avg_ret": 2.6315,
+        "n": 59
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5934,
+        "avg_ret": 1.5463,
+        "n": 91
+      },
+      {
+        "code": "000100",
+        "name": "유한양행",
+        "win_rate": 0.5556,
+        "avg_ret": 1.3514,
+        "n": 99
+      },
+      {
+        "code": "066570",
+        "name": "LG전자",
+        "win_rate": 0.5596,
+        "avg_ret": 1.1933,
+        "n": 109
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5639,
+        "avg_ret": 0.5686,
+        "n": 227
+      },
+      {
+        "code": "298050",
+        "name": "효성첨단소재",
+        "win_rate": 0.5795,
+        "avg_ret": 1.4622,
+        "n": 88
+      }
+    ]
+  },
+  {
+    "indicator": "usd_krw",
+    "best_threshold": -2.0,
+    "best_direction": "SELL_SIG",
+    "best_win_rate": 0.6667,
+    "best_avg_ret": 1.8434,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "042700",
+        "name": "한미반도체",
+        "win_rate": 0.5541,
+        "avg_ret": 2.5866,
+        "n": 74
+      },
+      {
+        "code": "003850",
+        "name": "보령",
+        "win_rate": 0.5972,
+        "avg_ret": 2.5984,
+        "n": 72
+      },
+      {
+        "code": "002790",
+        "name": "아모레G",
+        "win_rate": 0.5567,
+        "avg_ret": 0.6138,
+        "n": 291
+      },
+      {
+        "code": "071050",
+        "name": "한국금융지주",
+        "win_rate": 0.5714,
+        "avg_ret": 2.0249,
+        "n": 77
+      },
+      {
+        "code": "138040",
+        "name": "메리츠금융지주",
+        "win_rate": 0.6462,
+        "avg_ret": 2.3357,
+        "n": 65
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5932,
+        "avg_ret": 0.725,
+        "n": 177
+      },
+      {
+        "code": "015760",
+        "name": "한국전력",
+        "win_rate": 0.6,
+        "avg_ret": 2.3273,
+        "n": 55
+      },
+      {
+        "code": "036570",
+        "name": "엔씨소프트",
+        "win_rate": 0.5696,
+        "avg_ret": 1.5753,
+        "n": 79
+      },
+      {
+        "code": "000880",
+        "name": "한화",
+        "win_rate": 0.5541,
+        "avg_ret": 0.8219,
+        "n": 148
+      },
+      {
+        "code": "000660",
+        "name": "SK하이닉스",
+        "win_rate": 0.5533,
+        "avg_ret": 0.8005,
+        "n": 150
+      }
+    ]
+  },
+  {
+    "indicator": "gold",
+    "best_threshold": 2.5,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6939,
+    "best_avg_ret": 0.5622,
+    "n_stocks": 10,
+    "top_stocks": [
+      {
+        "code": "047810",
+        "name": "한국항공우주",
+        "win_rate": 0.5875,
+        "avg_ret": 2.3774,
+        "n": 80
+      },
+      {
+        "code": "352820",
+        "name": "하이브",
+        "win_rate": 0.5631,
+        "avg_ret": 1.5671,
+        "n": 103
+      },
+      {
+        "code": "007070",
+        "name": "GS리테일",
+        "win_rate": 0.6324,
+        "avg_ret": 2.1303,
+        "n": 68
+      },
+      {
+        "code": "011070",
+        "name": "LG이노텍",
+        "win_rate": 0.5565,
+        "avg_ret": 1.2361,
+        "n": 115
+      },
+      {
+        "code": "003670",
+        "name": "포스코퓨처엠",
+        "win_rate": 0.5667,
+        "avg_ret": 1.5517,
+        "n": 90
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.5714,
+        "avg_ret": 1.2189,
+        "n": 112
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.6835,
+        "avg_ret": 1.7185,
+        "n": 79
+      },
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.5616,
+        "avg_ret": 0.8338,
+        "n": 146
+      },
+      {
+        "code": "033780",
+        "name": "KT&G",
+        "win_rate": 0.5612,
+        "avg_ret": 0.8452,
+        "n": 139
+      },
+      {
+        "code": "078930",
+        "name": "GS",
+        "win_rate": 0.5517,
+        "avg_ret": 0.7781,
+        "n": 145
+      }
+    ]
+  },
+  {
+    "indicator": "sox",
+    "best_threshold": 3.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6457,
+    "best_avg_ret": 1.0306,
+    "n_stocks": 9,
+    "top_stocks": [
+      {
+        "code": "005930",
+        "name": "삼성전자",
+        "win_rate": 0.5529,
+        "avg_ret": 1.0891,
+        "n": 293
+      },
+      {
+        "code": "064350",
+        "name": "현대로템",
+        "win_rate": 0.5621,
+        "avg_ret": 1.7531,
+        "n": 153
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5845,
+        "avg_ret": 0.7329,
+        "n": 219
+      },
+      {
+        "code": "079550",
+        "name": "LIG넥스원",
+        "win_rate": 0.55,
+        "avg_ret": 0.8474,
+        "n": 180
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5744,
+        "avg_ret": 0.4168,
+        "n": 336
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.558,
+        "avg_ret": 0.8532,
+        "n": 138
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5696,
+        "avg_ret": 0.6892,
+        "n": 158
+      },
+      {
+        "code": "241560",
+        "name": "두산밥캣",
+        "win_rate": 0.5776,
+        "avg_ret": 0.7548,
+        "n": 116
+      },
+      {
+        "code": "373220",
+        "name": "LG에너지솔루션",
+        "win_rate": 0.5614,
+        "avg_ret": 1.4362,
+        "n": 57
+      }
+    ]
+  },
+  {
+    "indicator": "us_10y",
+    "best_threshold": 3.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6389,
+    "best_avg_ret": 1.289,
+    "n_stocks": 6,
+    "top_stocks": [
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5836,
+        "avg_ret": 0.6712,
+        "n": 341
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5673,
+        "avg_ret": 0.4201,
+        "n": 312
+      },
+      {
+        "code": "247540",
+        "name": "에코프로비엠",
+        "win_rate": 0.5545,
+        "avg_ret": 0.9699,
+        "n": 101
+      },
+      {
+        "code": "373220",
+        "name": "LG에너지솔루션",
+        "win_rate": 0.5763,
+        "avg_ret": 0.9534,
+        "n": 59
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5763,
+        "avg_ret": 0.7946,
+        "n": 59
+      },
+      {
+        "code": "259960",
+        "name": "크래프톤",
+        "win_rate": 0.5541,
+        "avg_ret": 0.5391,
+        "n": 74
+      }
+    ]
+  },
+  {
+    "indicator": "amd",
+    "best_threshold": 3.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.6043,
+    "best_avg_ret": 0.5504,
+    "n_stocks": 6,
+    "top_stocks": [
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5573,
+        "avg_ret": 1.6925,
+        "n": 131
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.575,
+        "avg_ret": 0.5168,
+        "n": 360
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5662,
+        "avg_ret": 0.5116,
+        "n": 325
+      },
+      {
+        "code": "267250",
+        "name": "현대중공업",
+        "win_rate": 0.5639,
+        "avg_ret": 0.4645,
+        "n": 305
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.5556,
+        "avg_ret": 1.1111,
+        "n": 117
+      },
+      {
+        "code": "259960",
+        "name": "크래프톤",
+        "win_rate": 0.5659,
+        "avg_ret": 0.4784,
+        "n": 129
+      }
+    ]
+  },
+  {
+    "indicator": "nvidia",
+    "best_threshold": 2.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.5862,
+    "best_avg_ret": 0.5604,
+    "n_stocks": 6,
+    "top_stocks": [
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5862,
+        "avg_ret": 0.5604,
+        "n": 319
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5603,
+        "avg_ret": 0.6139,
+        "n": 282
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5669,
+        "avg_ret": 1.0309,
+        "n": 157
+      },
+      {
+        "code": "352820",
+        "name": "하이브",
+        "win_rate": 0.56,
+        "avg_ret": 0.8006,
+        "n": 150
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.5758,
+        "avg_ret": 0.8006,
+        "n": 132
+      },
+      {
+        "code": "259960",
+        "name": "크래프톤",
+        "win_rate": 0.5508,
+        "avg_ret": 0.4023,
+        "n": 187
+      }
+    ]
+  },
+  {
+    "indicator": "vix",
+    "best_threshold": -3.0,
+    "best_direction": "SELL_SIG",
+    "best_win_rate": 0.5727,
+    "best_avg_ret": 0.578,
+    "n_stocks": 5,
+    "top_stocks": [
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5633,
+        "avg_ret": 0.5389,
+        "n": 387
+      },
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5573,
+        "avg_ret": 1.3007,
+        "n": 131
+      },
+      {
+        "code": "267250",
+        "name": "현대중공업",
+        "win_rate": 0.5508,
+        "avg_ret": 0.4511,
+        "n": 374
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5606,
+        "avg_ret": 0.4712,
+        "n": 355
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.5513,
+        "avg_ret": 1.0707,
+        "n": 156
+      }
+    ]
+  },
+  {
+    "indicator": "wti",
+    "best_threshold": -3.0,
+    "best_direction": "SELL_SIG",
+    "best_win_rate": 0.5873,
+    "best_avg_ret": 1.2994,
+    "n_stocks": 5,
+    "top_stocks": [
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5836,
+        "avg_ret": 0.6279,
+        "n": 317
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5605,
+        "avg_ret": 0.4946,
+        "n": 314
+      },
+      {
+        "code": "352820",
+        "name": "하이브",
+        "win_rate": 0.5535,
+        "avg_ret": 0.971,
+        "n": 159
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.5535,
+        "avg_ret": 0.6693,
+        "n": 159
+      },
+      {
+        "code": "259960",
+        "name": "크래프톤",
+        "win_rate": 0.5854,
+        "avg_ret": 1.2014,
+        "n": 82
+      }
+    ]
+  },
+  {
+    "indicator": "tesla",
+    "best_threshold": 1.0,
+    "best_direction": "BUY",
+    "best_win_rate": 0.5775,
+    "best_avg_ret": 0.4893,
+    "n_stocks": 5,
+    "top_stocks": [
+      {
+        "code": "402340",
+        "name": "SK스퀘어",
+        "win_rate": 0.5556,
+        "avg_ret": 1.0113,
+        "n": 171
+      },
+      {
+        "code": "316140",
+        "name": "우리금융지주",
+        "win_rate": 0.5586,
+        "avg_ret": 1.1183,
+        "n": 145
+      },
+      {
+        "code": "088980",
+        "name": "맥쿼리인프라",
+        "win_rate": 0.5775,
+        "avg_ret": 0.4893,
+        "n": 284
+      },
+      {
+        "code": "069500",
+        "name": "KODEX 200",
+        "win_rate": 0.5568,
+        "avg_ret": 0.298,
+        "n": 458
+      },
+      {
+        "code": "033780",
+        "name": "KT&G",
+        "win_rate": 0.5526,
+        "avg_ret": 0.2504,
+        "n": 342
+      }
+    ]
+  }
+]

@@ -1,0 +1,394 @@
+[
+  {
+    "indicator": "robotics",
+    "category": "sector_etf",
+    "lag_1_corr": 0.3642,
+    "direction": "BUY",
+    "strength": 0.3642,
+    "n_obs": 2954
+  },
+  {
+    "indicator": "semi_soxx",
+    "category": "sector_etf",
+    "lag_1_corr": 0.3404,
+    "direction": "BUY",
+    "strength": 0.3404,
+    "n_obs": 5899
+  },
+  {
+    "indicator": "tech_xlk",
+    "category": "sector_etf",
+    "lag_1_corr": 0.337,
+    "direction": "BUY",
+    "strength": 0.337,
+    "n_obs": 6505
+  },
+  {
+    "indicator": "sp500_fut",
+    "category": "futures",
+    "lag_1_corr": 0.3318,
+    "direction": "BUY",
+    "strength": 0.3318,
+    "n_obs": 6121
+  },
+  {
+    "indicator": "nasdaq_fut",
+    "category": "futures",
+    "lag_1_corr": 0.3301,
+    "direction": "BUY",
+    "strength": 0.3301,
+    "n_obs": 6121
+  },
+  {
+    "indicator": "defense",
+    "category": "sector_etf",
+    "lag_1_corr": 0.3265,
+    "direction": "BUY",
+    "strength": 0.3265,
+    "n_obs": 4751
+  },
+  {
+    "indicator": "nasdaq",
+    "category": "us_index",
+    "lag_1_corr": 0.3258,
+    "direction": "BUY",
+    "strength": 0.3258,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "clean_energy",
+    "category": "sector_etf",
+    "lag_1_corr": 0.3249,
+    "direction": "BUY",
+    "strength": 0.3249,
+    "n_obs": 4242
+  },
+  {
+    "indicator": "industrial_xli",
+    "category": "sector_etf",
+    "lag_1_corr": 0.3234,
+    "direction": "BUY",
+    "strength": 0.3234,
+    "n_obs": 6505
+  },
+  {
+    "indicator": "dow_fut",
+    "category": "futures",
+    "lag_1_corr": 0.3222,
+    "direction": "BUY",
+    "strength": 0.3222,
+    "n_obs": 5734
+  },
+  {
+    "indicator": "russell2000",
+    "category": "us_index",
+    "lag_1_corr": 0.32,
+    "direction": "BUY",
+    "strength": 0.32,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "consumer_xly",
+    "category": "sector_etf",
+    "lag_1_corr": 0.319,
+    "direction": "BUY",
+    "strength": 0.319,
+    "n_obs": 6505
+  },
+  {
+    "indicator": "sp500",
+    "category": "us_index",
+    "lag_1_corr": 0.3166,
+    "direction": "BUY",
+    "strength": 0.3166,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "sox",
+    "category": "us_index",
+    "lag_1_corr": 0.3146,
+    "direction": "BUY",
+    "strength": 0.3146,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "battery",
+    "category": "sector_etf",
+    "lag_1_corr": 0.3133,
+    "direction": "BUY",
+    "strength": 0.3133,
+    "n_obs": 3733
+  },
+  {
+    "indicator": "nasdaq100",
+    "category": "us_index",
+    "lag_1_corr": 0.3119,
+    "direction": "BUY",
+    "strength": 0.3119,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "materials_xlb",
+    "category": "sector_etf",
+    "lag_1_corr": 0.3003,
+    "direction": "BUY",
+    "strength": 0.3003,
+    "n_obs": 6505
+  },
+  {
+    "indicator": "dow",
+    "category": "us_index",
+    "lag_1_corr": 0.3002,
+    "direction": "BUY",
+    "strength": 0.3002,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "real_estate",
+    "category": "sector_etf",
+    "lag_1_corr": 0.2889,
+    "direction": "BUY",
+    "strength": 0.2889,
+    "n_obs": 5138
+  },
+  {
+    "indicator": "asml",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2821,
+    "direction": "BUY",
+    "strength": 0.2821,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "finance_xlf",
+    "category": "sector_etf",
+    "lag_1_corr": 0.2793,
+    "direction": "BUY",
+    "strength": 0.2793,
+    "n_obs": 6505
+  },
+  {
+    "indicator": "applied_materials",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2779,
+    "direction": "BUY",
+    "strength": 0.2779,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "klac",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2768,
+    "direction": "BUY",
+    "strength": 0.2768,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "tsmc",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2747,
+    "direction": "BUY",
+    "strength": 0.2747,
+    "n_obs": 6794
+  },
+  {
+    "indicator": "broadcom",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2712,
+    "direction": "BUY",
+    "strength": 0.2712,
+    "n_obs": 3969
+  },
+  {
+    "indicator": "hy_bond",
+    "category": "credit_risk",
+    "lag_1_corr": 0.2707,
+    "direction": "BUY",
+    "strength": 0.2707,
+    "n_obs": 4528
+  },
+  {
+    "indicator": "health_xlv",
+    "category": "sector_etf",
+    "lag_1_corr": 0.2698,
+    "direction": "BUY",
+    "strength": 0.2698,
+    "n_obs": 6505
+  },
+  {
+    "indicator": "lam_research",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2625,
+    "direction": "BUY",
+    "strength": 0.2625,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "dax",
+    "category": "global_index",
+    "lag_1_corr": 0.2567,
+    "direction": "BUY",
+    "strength": 0.2567,
+    "n_obs": 7095
+  },
+  {
+    "indicator": "vix",
+    "category": "us_index",
+    "lag_1_corr": -0.2551,
+    "direction": "AVOID",
+    "strength": 0.2551,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "micron",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2513,
+    "direction": "BUY",
+    "strength": 0.2513,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "cac40",
+    "category": "global_index",
+    "lag_1_corr": 0.2455,
+    "direction": "BUY",
+    "strength": 0.2455,
+    "n_obs": 7114
+  },
+  {
+    "indicator": "junk_spread",
+    "category": "credit_risk",
+    "lag_1_corr": 0.2421,
+    "direction": "BUY",
+    "strength": 0.2421,
+    "n_obs": 4372
+  },
+  {
+    "indicator": "ftse100",
+    "category": "global_index",
+    "lag_1_corr": 0.2411,
+    "direction": "BUY",
+    "strength": 0.2411,
+    "n_obs": 7031
+  },
+  {
+    "indicator": "bovespa",
+    "category": "global_index",
+    "lag_1_corr": 0.2404,
+    "direction": "BUY",
+    "strength": 0.2404,
+    "n_obs": 6933
+  },
+  {
+    "indicator": "nvidia",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2307,
+    "direction": "BUY",
+    "strength": 0.2307,
+    "n_obs": 6488
+  },
+  {
+    "indicator": "google",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2296,
+    "direction": "BUY",
+    "strength": 0.2296,
+    "n_obs": 5163
+  },
+  {
+    "indicator": "intel",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2288,
+    "direction": "BUY",
+    "strength": 0.2288,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "amd",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2225,
+    "direction": "BUY",
+    "strength": 0.2225,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "em_bond",
+    "category": "credit_risk",
+    "lag_1_corr": 0.2158,
+    "direction": "BUY",
+    "strength": 0.2158,
+    "n_obs": 4362
+  },
+  {
+    "indicator": "microsoft",
+    "category": "us_stocks",
+    "lag_1_corr": 0.2058,
+    "direction": "BUY",
+    "strength": 0.2058,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "energy_xle",
+    "category": "sector_etf",
+    "lag_1_corr": 0.2056,
+    "direction": "BUY",
+    "strength": 0.2056,
+    "n_obs": 6505
+  },
+  {
+    "indicator": "qualcomm",
+    "category": "us_stocks",
+    "lag_1_corr": 0.1976,
+    "direction": "BUY",
+    "strength": 0.1976,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "tesla",
+    "category": "us_stocks",
+    "lag_1_corr": 0.1962,
+    "direction": "BUY",
+    "strength": 0.1962,
+    "n_obs": 3750
+  },
+  {
+    "indicator": "apple",
+    "category": "us_stocks",
+    "lag_1_corr": 0.1959,
+    "direction": "BUY",
+    "strength": 0.1959,
+    "n_obs": 6989
+  },
+  {
+    "indicator": "amazon",
+    "category": "us_stocks",
+    "lag_1_corr": 0.1856,
+    "direction": "BUY",
+    "strength": 0.1856,
+    "n_obs": 6889
+  },
+  {
+    "indicator": "meta",
+    "category": "us_stocks",
+    "lag_1_corr": 0.1744,
+    "direction": "BUY",
+    "strength": 0.1744,
+    "n_obs": 3295
+  },
+  {
+    "indicator": "utility_xlu",
+    "category": "sector_etf",
+    "lag_1_corr": 0.1707,
+    "direction": "BUY",
+    "strength": 0.1707,
+    "n_obs": 6505
+  },
+  {
+    "indicator": "copper",
+    "category": "commodities",
+    "lag_1_corr": 0.1587,
+    "direction": "BUY",
+    "strength": 0.1587,
+    "n_obs": 6094
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "daily_stop_loss": {
+    "max_daily_loss_pct": -3.0,
+    "max_weekly_loss_pct": -5.0,
+    "cooldown_hours": 24,
+    "action": "HALT_NEW_ENTRY",
+    "description": "일일/주간 최대 손실 한도 초과 시 신규 매수 중단 (청산은 계속)"
+  },
+  "consecutive_loss": {
+    "trigger_count": 3,
+    "reduce_aggressive_by": 0.5,
+    "recovery_condition": "1_win",
+    "description": "연속 N회 손절 시 aggressive 비중을 reduce_aggressive_by 만큼 곱하여 축소"
+  },
+  "max_positions_by_phase": {
+    "대상승장": 5,
+    "상승장": 4,
+    "일반장": 3,
+    "변동폭큰": 2,
+    "하락장": 1,
+    "대폭락장": 1
+  },
+  "market_session": {
+    "no_entry_before": "09:30",
+    "force_close_after": "15:20",
+    "description": "장 시작 30분 변동성 구간(~09:30) 진입 보류, 15:20 이후 초단기 강제 청산"
+  },
+  "sector_correlation": {
+    "same_sector_dampen": 0.5,
+    "description": "동일 섹터 종목 이미 보유 시 추가 매수 비중에 곱하는 감쇠 계수"
+  },
+  "dca_config": {
+    "enabled": true,
+    "splits": 2,
+    "split_ratio": [0.6, 0.4],
+    "second_entry_condition": {
+      "type": "pullback",
+      "pullback_pct": -1.0,
+      "max_wait_hours": 4
+    },
+    "description": "1차 60% 시장가 매수, 2차 40%는 1차 매수가 대비 -1% 하락 시 추가 매수. 4시간 내 미발동 시 취소."
+  },
+  "recovery_mode": {
+    "enabled": true,
+    "allowed_phases": ["대상승장", "상승장"],
+    "position_size_ratio": 0.3,
+    "max_positions": 1,
+    "description": "Stop Loss 발동 중에도 상승 국면이면 정상 비중의 30%로 축소 매수 허용 (최대 1종목)"
+  },
+  "partial_take_profit": {
+    "enabled": true,
+    "levels": [
+      {"pnl_pct": 1.5, "sell_ratio": 0.3},
+      {"pnl_pct": 3.0, "sell_ratio": 0.3}
+    ],
+    "remaining_strategy": "trailing_stop",
+    "description": "+1.5%에서 30% 매도, +3%에서 30% 매도, 나머지는 기존 트레일링/TP 따름"
+  }
+}

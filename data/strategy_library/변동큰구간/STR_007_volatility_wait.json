@@ -1,0 +1,30 @@
+{
+  "id": "STR_007",
+  "group": "시장국면",
+  "phase": "변동폭큰",
+  "description": "VIX 25~35 구간 양방향 급등락 시 신규 진입 금지, 기존 포지션 최소화",
+  "conditions": {
+    "진입": "신규 진입 금지 (현금 80% 유지)",
+    "청산": "KODEX 인버스 ETF 20% 편입으로 부분 헤지",
+    "제외": "방향성 확인 전 매매 금지"
+  },
+  "performance": {
+    "backtest_win_rate": 0.5385,
+    "backtest_return_pct": 0.6985,
+    "real_win_rate": 0.0,
+    "real_return_pct": 0.0,
+    "mdd": -12.12,
+    "status": "백테스팅중",
+    "backtest_trade_count": 26
+  },
+  "compatible": [],
+  "incompatible": [
+    "STR_001",
+    "STR_002",
+    "STR_003",
+    "STR_004"
+  ],
+  "created_at": "2026-03-31",
+  "updated_at": "2026-04-02",
+  "holding_period": "초단기"
+}

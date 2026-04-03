@@ -1,0 +1,52 @@
+# 환경 변수 파일 (절대 커밋 금지)
+.env
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 로그 및 보고서 (런타임 생성 파일)
+logs/
+reports/
+
+# pytest 캐시
+.pytest_cache/
+
+# 패키지 빌드 산출물
+*.egg-info/
+dist/
+build/
+
+# 가상환경
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 히스토리 데이터 (대용량 CSV - fetch_history.py로 재생성 가능)
+data/history/us_market/
+data/history/kr_market/
+data/history/commodity/
+data/history/correlation/*.csv
+# JSON 분석 결과는 포함 유지
+!data/history/correlation/*.json
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

@@ -1,0 +1,194 @@
+{
+  "version": "1.0",
+  "stocks": {
+    "005930": {
+      "name": "삼성전자",
+      "market": "KOSPI",
+      "sector": ["반도체"],
+      "characteristics": ["대형우량주", "고배당주"],
+      "themes": ["AI/HBM", "반도체장비"],
+      "leading_indicators": ["sox_surge", "nasdaq_surge"],
+      "horizon_suitability": ["장기", "중기", "단기", "초단기"]
+    },
+    "000660": {
+      "name": "SK하이닉스",
+      "market": "KOSPI",
+      "sector": ["반도체"],
+      "characteristics": ["대형우량주"],
+      "themes": ["AI/HBM"],
+      "leading_indicators": ["nvidia_surge", "sox_surge", "amd_surge"],
+      "horizon_suitability": ["장기", "중기", "단기", "초단기"]
+    },
+    "042700": {
+      "name": "한미반도체",
+      "market": "KOSPI",
+      "sector": ["반도체"],
+      "characteristics": ["중소형성장주"],
+      "themes": ["AI/HBM", "반도체장비"],
+      "leading_indicators": ["nvidia_surge", "sox_surge"],
+      "horizon_suitability": ["단기", "초단기"]
+    },
+    "373220": {
+      "name": "LG에너지솔루션",
+      "market": "KOSPI",
+      "sector": ["2차전지"],
+      "characteristics": ["대형우량주"],
+      "themes": [],
+      "leading_indicators": ["tesla_strong"],
+      "horizon_suitability": ["장기", "중기", "단기", "초단기"]
+    },
+    "006400": {
+      "name": "삼성SDI",
+      "market": "KOSPI",
+      "sector": ["2차전지"],
+      "characteristics": ["대형우량주"],
+      "themes": [],
+      "leading_indicators": ["tesla_strong"],
+      "horizon_suitability": ["장기", "중기", "단기", "초단기"]
+    },
+    "096770": {
+      "name": "SK이노베이션",
+      "market": "KOSPI",
+      "sector": ["정유"],
+      "characteristics": ["대형우량주"],
+      "themes": ["미국관세수혜"],
+      "leading_indicators": ["wti_surge"],
+      "horizon_suitability": ["중기", "단기", "초단기"]
+    },
+    "010950": {
+      "name": "S-Oil",
+      "market": "KOSPI",
+      "sector": ["정유"],
+      "characteristics": ["고배당주"],
+      "themes": [],
+      "leading_indicators": ["wti_surge"],
+      "horizon_suitability": ["장기", "중기"]
+    },
+    "069500": {
+      "name": "KODEX 200",
+      "market": "KOSPI",
+      "sector": ["지수ETF"],
+      "characteristics": ["ETF"],
+      "themes": [],
+      "leading_indicators": ["nasdaq_surge"],
+      "horizon_suitability": ["장기", "중기", "단기", "초단기"]
+    },
+    "229200": {
+      "name": "KODEX 코스닥150",
+      "market": "KOSPI",
+      "sector": ["지수ETF"],
+      "characteristics": ["ETF"],
+      "themes": [],
+      "leading_indicators": ["nasdaq_surge"],
+      "horizon_suitability": ["장기", "중기", "단기", "초단기"]
+    },
+    "068270": {
+      "name": "셀트리온",
+      "market": "KOSPI",
+      "sector": ["바이오"],
+      "characteristics": ["대형우량주"],
+      "themes": [],
+      "leading_indicators": [],
+      "horizon_suitability": ["중기", "단기", "초단기"]
+    },
+    "207940": {
+      "name": "삼성바이오로직스",
+      "market": "KOSPI",
+      "sector": ["바이오"],
+      "characteristics": ["대형우량주"],
+      "themes": [],
+      "leading_indicators": [],
+      "horizon_suitability": ["중기", "단기", "초단기"]
+    },
+    "012450": {
+      "name": "한화에어로스페이스",
+      "market": "KOSPI",
+      "sector": ["방산"],
+      "characteristics": ["대형우량주"],
+      "themes": ["방산"],
+      "leading_indicators": [],
+      "horizon_suitability": ["장기", "중기", "단기"]
+    },
+    "079550": {
+      "name": "LIG넥스원",
+      "market": "KOSPI",
+      "sector": ["방산"],
+      "characteristics": ["중소형성장주"],
+      "themes": ["방산"],
+      "leading_indicators": [],
+      "horizon_suitability": ["단기", "초단기"]
+    },
+    "034020": {
+      "name": "두산에너빌리티",
+      "market": "KOSPI",
+      "sector": ["원전"],
+      "characteristics": ["대형우량주"],
+      "themes": ["원전"],
+      "leading_indicators": [],
+      "horizon_suitability": ["중기", "단기", "초단기"]
+    },
+    "130500": {
+      "name": "한전기술",
+      "market": "KOSPI",
+      "sector": ["원전"],
+      "characteristics": ["중소형성장주"],
+      "themes": ["원전"],
+      "leading_indicators": [],
+      "horizon_suitability": ["단기", "초단기"]
+    },
+    "005380": {
+      "name": "현대차",
+      "market": "KOSPI",
+      "sector": ["자동차"],
+      "characteristics": ["대형우량주", "고배당주"],
+      "themes": ["로봇"],
+      "leading_indicators": [],
+      "horizon_suitability": ["장기", "중기", "단기"]
+    },
+    "000270": {
+      "name": "기아",
+      "market": "KOSPI",
+      "sector": ["자동차"],
+      "characteristics": ["대형우량주", "고배당주"],
+      "themes": [],
+      "leading_indicators": [],
+      "horizon_suitability": ["장기", "중기", "단기"]
+    }
+  },
+
+  "sector_definitions": {
+    "반도체":  { "description": "메모리/시스템 반도체 제조·장비", "krx_index_ticker": "1028" },
+    "2차전지": { "description": "배터리 제조·소재", "krx_index_ticker": null },
+    "정유":    { "description": "석유 정제·유통", "krx_index_ticker": null },
+    "지수ETF": { "description": "코스피/코스닥 추종 ETF", "krx_index_ticker": null },
+    "바이오":  { "description": "제약·바이오 연구개발", "krx_index_ticker": null },
+    "방산":    { "description": "방위산업", "krx_index_ticker": null },
+    "원전":    { "description": "원자력 발전", "krx_index_ticker": null },
+    "자동차":  { "description": "완성차·자동차부품", "krx_index_ticker": null }
+  },
+
+  "characteristic_definitions": {
+    "대형우량주":   { "description": "시가총액 5조 이상 안정적 기업" },
+    "고배당주":     { "description": "배당수익률 3% 이상" },
+    "중소형성장주": { "description": "시가총액 1조 미만, 고성장" },
+    "코스닥성장주": { "description": "코스닥 상장 성장주" },
+    "ETF":          { "description": "상장지수펀드" }
+  },
+
+  "theme_definitions": {
+    "AI/HBM":     { "description": "AI 가속기·HBM 메모리 수혜", "proxy_tickers": ["NVDA", "AMD"] },
+    "방산":        { "description": "방위산업 수혜", "proxy_tickers": ["LMT", "RTX"] },
+    "미국관세수혜": { "description": "미국 관세정책 수혜 종목", "proxy_tickers": [] },
+    "원전":        { "description": "원자력 발전 수혜", "proxy_tickers": ["CCJ"] },
+    "로봇":        { "description": "산업용 로봇·자동화", "proxy_tickers": ["ROBO"] },
+    "반도체장비":  { "description": "반도체 제조장비", "proxy_tickers": ["AMAT", "KLAC"] }
+  },
+
+  "theme_momentum_sources": {
+    "AI/HBM":    { "type": "us_individual", "tickers": ["NVDA", "AMD"],  "threshold_pct": 3.0 },
+    "방산":       { "type": "us_individual", "tickers": ["LMT", "RTX"],   "threshold_pct": 2.0 },
+    "원전":       { "type": "us_etf",        "tickers": ["CCJ"],           "threshold_pct": 2.0 },
+    "로봇":       { "type": "us_etf",        "tickers": ["ROBO"],          "threshold_pct": 2.0 },
+    "반도체장비": { "type": "us_individual", "tickers": ["AMAT", "KLAC"],  "threshold_pct": 2.5 }
+  }
+}

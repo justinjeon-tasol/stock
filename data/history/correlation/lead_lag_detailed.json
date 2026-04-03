@@ -1,0 +1,91 @@
+{
+  "computed_date": "2026-03-31",
+  "data_period": "2021-04-01 ~ 2026-03-30",
+  "sample_days": 1254,
+  "description": "미국 선행 지표 vs 한국 후행 반응 상관관계 (일간 수익률 기준)",
+
+  "key_findings": [
+    "SOX → SK하이닉스: lag=1일 상관관계 0.42 (강한 선행 효과)",
+    "QQQ → KOSPI: lag=1일 상관관계 0.44 (당일 0.07에서 급등)",
+    "QQQ → KOSDAQ: lag=1일 상관관계 0.34",
+    "USD/KRW → KOSPI: lag=0일 -0.28 (달러 강세는 당일 즉각 반응)",
+    "Gold → KOSPI: 약한 양의 상관관계, 선행 효과 미미"
+  ],
+
+  "lead_lag_matrix": {
+    "QQQ_to_KOSPI": {
+      "lag_0": 0.0773,
+      "lag_1": 0.4425,
+      "lag_2": 0.0325,
+      "lag_3": -0.0096,
+      "best_lag": 1,
+      "interpretation": "미국 나스닥이 오른 다음날 KOSPI가 따라 오름"
+    },
+    "QQQ_to_KOSDAQ": {
+      "lag_0": 0.0945,
+      "lag_1": 0.3372,
+      "lag_2": 0.0319,
+      "lag_3": 0.0243,
+      "best_lag": 1,
+      "interpretation": "나스닥 강세 다음날 코스닥도 동반 상승"
+    },
+    "SOX_to_SK하이닉스": {
+      "lag_0": 0.1360,
+      "lag_1": 0.4158,
+      "lag_2": -0.0195,
+      "lag_3": -0.0247,
+      "best_lag": 1,
+      "interpretation": "SOX 급등 다음날 SK하이닉스 강세 (반도체 섹터 연계)"
+    },
+    "NVDA_to_SK하이닉스": {
+      "lag_0": 0.1477,
+      "lag_1": 0.3033,
+      "lag_2": -0.0020,
+      "lag_3": -0.0051,
+      "best_lag": 1,
+      "interpretation": "엔비디아 강세 다음날 SK하이닉스 HBM 수혜 기대"
+    },
+    "USDKRW_to_KOSPI": {
+      "lag_0": -0.2793,
+      "lag_1": 0.0248,
+      "lag_2": 0.0505,
+      "lag_3": -0.0138,
+      "best_lag": 0,
+      "interpretation": "달러 강세는 당일 KOSPI에 즉각 반영 (외국인 매도 압력)"
+    },
+    "Gold_to_KOSPI": {
+      "lag_0": 0.1398,
+      "lag_1": 0.1570,
+      "lag_2": -0.0435,
+      "lag_3": -0.0054,
+      "best_lag": 1,
+      "interpretation": "금 강세 → KOSPI 약한 양의 반응 (안전자산 선호지만 직접 영향 작음)"
+    }
+  },
+
+  "yearly_correlation_QQQ_KOSPI": {
+    "2021": 0.0696,
+    "2022": 0.1081,
+    "2023": 0.1542,
+    "2024": 0.2349,
+    "2025": 0.0123,
+    "2026": -0.1230,
+    "note": "2024년 상관관계 최고 (AI 테마 동조화), 2025-2026 탈동조화 경향"
+  },
+
+  "full_period_correlation_lag0": {
+    "QQQ_vs_KOSPI":  0.0773,
+    "QQQ_vs_KOSDAQ": 0.0908,
+    "SOX_vs_KOSPI":  0.0955,
+    "SPY_vs_KOSPI":  0.0723,
+    "NVDA_vs_KOSPI": 0.0901,
+    "AMD_vs_KOSPI":  0.0702
+  },
+
+  "trading_signals": {
+    "BUY_signal": "전일 미국 QQQ +1.5% 이상 → 당일 KOSPI/KOSDAQ 매수 우위",
+    "SELL_signal": "전일 미국 QQQ -1.5% 이하 → 당일 KOSPI/KOSDAQ 매도 우위",
+    "CAUTION": "USD/KRW +1% 이상 강세 → 당일 외국인 매도 압력 증가 즉각 반영",
+    "SEMICONDUCTOR": "전일 SOX +2% 이상 → 당일 삼성전자/SK하이닉스 매수 우위"
+  }
+}

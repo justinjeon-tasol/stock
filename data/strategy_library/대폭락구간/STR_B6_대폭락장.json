@@ -1,0 +1,75 @@
+{
+  "id": "STR_B6",
+  "group": "데이터기반",
+  "phase": "대폭락장",
+  "description": "대폭락장 데이터기반 전략. 주요 선행신호: NVDA/USD_KRW. 국면 평균 일간수익 -0.75%, 자연 승률 29%.",
+  "conditions": {
+    "진입": "전일 NVDA +2.0% 이상 (해당 시 익일 승률 42%) AND 전일 USD_KRW +0.5% 이상 (해당 시 익일 승률 38%)",
+    "청산": "익절 +5.3% 또는 손절 -4.0%",
+    "제외": "전일 NVDA -3.0% 이하 시 진입 보류"
+  },
+  "performance": {
+    "backtest_win_rate": 0.0,
+    "backtest_return_pct": 0.0,
+    "real_win_rate": 0.0,
+    "real_return_pct": 0.0,
+    "mdd": 0.0,
+    "status": "백테스팅중",
+    "phase_daily_win_rate": 0.286,
+    "phase_avg_daily_ret": -0.749,
+    "backtest_trade_count": 0
+  },
+  "analysis": {
+    "top_buy_signals": [
+      {
+        "signal": "nvda",
+        "threshold": 2.0,
+        "n": 12,
+        "win_rate": 0.417,
+        "avg_ret": -0.018,
+        "edge": -0.083
+      },
+      {
+        "signal": "usd_krw",
+        "threshold": 0.5,
+        "n": 13,
+        "win_rate": 0.385,
+        "avg_ret": -0.632,
+        "edge": -0.115
+      },
+      {
+        "signal": "sox",
+        "threshold": 2.0,
+        "n": 8,
+        "win_rate": 0.375,
+        "avg_ret": -0.001,
+        "edge": -0.125
+      }
+    ],
+    "top_sell_signals": [
+      {
+        "signal": "nvda",
+        "threshold": -3.0,
+        "n": 9,
+        "win_rate": 0.222,
+        "avg_ret": -0.419,
+        "edge": -0.278
+      },
+      {
+        "signal": "usd_krw",
+        "threshold": -0.5,
+        "n": 5,
+        "win_rate": 0.2,
+        "avg_ret": -0.962,
+        "edge": -0.3
+      }
+    ],
+    "phase_days": 35,
+    "phase_ratio_pct": 0.0
+  },
+  "compatible": [],
+  "incompatible": [],
+  "created_at": "2026-03-31",
+  "updated_at": "2026-03-31",
+  "holding_period": "초단기"
+}

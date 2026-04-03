@@ -1,0 +1,72 @@
+{
+  "horizons": {
+    "초단기": {
+      "label": "초단기",
+      "description": "장중 1~3시간 단타. 마감 전 전량 청산.",
+      "max_hold_hours": 3,
+      "time_exit": "15:20",
+      "take_profit_pct": 1.5,
+      "stop_loss_pct": -0.7,
+      "trailing_stop": false,
+      "trailing_stop_pct": 0.0,
+      "trailing_activate_pct": 0.0,
+      "exit_on_phase_change": [],
+      "compatible_phases": ["일반장", "변동폭큰", "하락장"],
+      "signal_type": "intraday",
+      "risk_note": "장중 변동성 활용. 오버나이트 리스크 없음."
+    },
+    "단기": {
+      "label": "단기",
+      "description": "1~5 거래일 보유. 트레일링 스탑으로 상승 흐름 최대 활용.",
+      "max_hold_days": 5,
+      "time_exit": null,
+      "take_profit_pct": 10.0,
+      "stop_loss_pct": -2.0,
+      "trailing_stop": true,
+      "trailing_stop_pct": 1.5,
+      "trailing_activate_pct": 2.0,
+      "exit_on_phase_change": ["하락장", "대폭락장"],
+      "compatible_phases": ["대상승장", "상승장", "일반장"],
+      "signal_type": "overnight",
+      "risk_note": "+2% 도달 시 트레일링 활성화. 고점 대비 -1.5% 하락 시 청산. 최대 TP 10%."
+    },
+    "중기": {
+      "label": "중기",
+      "description": "1~4주 중기 보유. 트레일링 스탑으로 추세 추종.",
+      "max_hold_days": 20,
+      "time_exit": null,
+      "take_profit_pct": 15.0,
+      "stop_loss_pct": -3.0,
+      "trailing_stop": true,
+      "trailing_stop_pct": 2.5,
+      "trailing_activate_pct": 3.0,
+      "exit_on_phase_change": ["변동폭큰", "하락장", "대폭락장"],
+      "compatible_phases": ["대상승장", "상승장"],
+      "signal_type": "trend",
+      "risk_note": "+3% 트레일링 활성, 고점 -2.5% 청산. 최대 TP 15%."
+    },
+    "장기": {
+      "label": "장기",
+      "description": "1~3개월 장기 보유. 넓은 트레일링으로 대세 상승 추종.",
+      "max_hold_days": 90,
+      "time_exit": null,
+      "take_profit_pct": 25.0,
+      "stop_loss_pct": -5.0,
+      "trailing_stop": true,
+      "trailing_stop_pct": 4.0,
+      "trailing_activate_pct": 8.0,
+      "exit_on_phase_change": ["하락장", "대폭락장"],
+      "compatible_phases": ["대상승장"],
+      "signal_type": "macro",
+      "risk_note": "+8% 트레일링 활성, 고점 -4% 청산. 최대 TP 25%."
+    }
+  },
+  "phase_default_horizon": {
+    "대상승장": "중기",
+    "상승장":   "단기",
+    "일반장":   "단기",
+    "변동폭큰": "초단기",
+    "하락장":   "초단기",
+    "대폭락장": "초단기"
+  }
+}

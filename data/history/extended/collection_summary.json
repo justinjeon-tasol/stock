@@ -1,0 +1,542 @@
+{
+  "us_index": {
+    "nasdaq": {
+      "status": "ok",
+      "rows": 13905,
+      "years": 55.2
+    },
+    "sp500": {
+      "status": "ok",
+      "rows": 24679,
+      "years": 98.3
+    },
+    "dow": {
+      "status": "ok",
+      "rows": 8623,
+      "years": 34.2
+    },
+    "sox": {
+      "status": "ok",
+      "rows": 8032,
+      "years": 31.9
+    },
+    "russell2000": {
+      "status": "ok",
+      "rows": 9713,
+      "years": 38.6
+    },
+    "nasdaq100": {
+      "status": "ok",
+      "rows": 10204,
+      "years": 40.5
+    },
+    "vix": {
+      "status": "ok",
+      "rows": 9129,
+      "years": 36.2
+    }
+  },
+  "us_stocks": {
+    "nvidia": {
+      "status": "ok",
+      "rows": 6840,
+      "years": 27.2
+    },
+    "amd": {
+      "status": "ok",
+      "rows": 11605,
+      "years": 46.0
+    },
+    "tesla": {
+      "status": "ok",
+      "rows": 3964,
+      "years": 15.8
+    },
+    "apple": {
+      "status": "ok",
+      "rows": 11417,
+      "years": 45.3
+    },
+    "microsoft": {
+      "status": "ok",
+      "rows": 10091,
+      "years": 40.1
+    },
+    "google": {
+      "status": "ok",
+      "rows": 5439,
+      "years": 21.6
+    },
+    "amazon": {
+      "status": "ok",
+      "rows": 7265,
+      "years": 28.9
+    },
+    "meta": {
+      "status": "ok",
+      "rows": 3487,
+      "years": 13.9
+    },
+    "qualcomm": {
+      "status": "ok",
+      "rows": 8635,
+      "years": 34.3
+    },
+    "broadcom": {
+      "status": "ok",
+      "rows": 4189,
+      "years": 16.7
+    },
+    "asml": {
+      "status": "ok",
+      "rows": 7814,
+      "years": 31.0
+    },
+    "tsmc": {
+      "status": "ok",
+      "rows": 7163,
+      "years": 28.5
+    },
+    "intel": {
+      "status": "ok",
+      "rows": 11605,
+      "years": 46.0
+    },
+    "micron": {
+      "status": "ok",
+      "rows": 10540,
+      "years": 41.8
+    },
+    "lam_research": {
+      "status": "ok",
+      "rows": 10559,
+      "years": 41.9
+    },
+    "applied_materials": {
+      "status": "ok",
+      "rows": 11605,
+      "years": 46.0
+    },
+    "klac": {
+      "status": "ok",
+      "rows": 11462,
+      "years": 45.5
+    }
+  },
+  "kr_index": {
+    "kospi": {
+      "status": "ok",
+      "rows": 7214,
+      "years": 29.3
+    },
+    "kosdaq": {
+      "status": "ok",
+      "rows": 6274,
+      "years": 25.5
+    },
+    "ks200": {
+      "status": "ok",
+      "rows": 7349,
+      "years": 30.0
+    }
+  },
+  "kr_stocks": {
+    "samsung": {
+      "status": "ok",
+      "rows": 6563,
+      "years": 26.2
+    },
+    "sk_hynix": {
+      "status": "ok",
+      "rows": 6563,
+      "years": 26.2
+    },
+    "lg_energy": {
+      "status": "ok",
+      "rows": 1018,
+      "years": 4.2
+    },
+    "samsung_sdi": {
+      "status": "ok",
+      "rows": 6563,
+      "years": 26.2
+    },
+    "hanmi_semi": {
+      "status": "ok",
+      "rows": 5114,
+      "years": 20.7
+    },
+    "sk_inno": {
+      "status": "ok",
+      "rows": 4612,
+      "years": 18.7
+    },
+    "s_oil": {
+      "status": "ok",
+      "rows": 6563,
+      "years": 26.2
+    },
+    "hyundai": {
+      "status": "ok",
+      "rows": 6563,
+      "years": 26.2
+    },
+    "kia": {
+      "status": "ok",
+      "rows": 6563,
+      "years": 26.2
+    },
+    "posco": {
+      "status": "ok",
+      "rows": 6563,
+      "years": 26.2
+    },
+    "naver": {
+      "status": "ok",
+      "rows": 5828,
+      "years": 23.4
+    },
+    "kakao": {
+      "status": "ok",
+      "rows": 6535,
+      "years": 26.1
+    },
+    "celltrion": {
+      "status": "ok",
+      "rows": 5118,
+      "years": 20.7
+    },
+    "samsung_bio": {
+      "status": "ok",
+      "rows": 2297,
+      "years": 9.4
+    },
+    "hanhwa_aero": {
+      "status": "ok",
+      "rows": 6563,
+      "years": 26.2
+    },
+    "lig_nex1": {
+      "status": "ok",
+      "rows": 2570,
+      "years": 10.5
+    },
+    "doosan_enerbility": {
+      "status": "ok",
+      "rows": 6347,
+      "years": 25.4
+    },
+    "kepco_e_c": {
+      "status": "ok",
+      "rows": 4008,
+      "years": 16.3
+    }
+  },
+  "commodities": {
+    "wti": {
+      "status": "ok",
+      "rows": 6430,
+      "years": 25.6
+    },
+    "brent": {
+      "status": "ok",
+      "rows": 4648,
+      "years": 18.7
+    },
+    "gold": {
+      "status": "ok",
+      "rows": 6421,
+      "years": 25.6
+    },
+    "silver": {
+      "status": "ok",
+      "rows": 6423,
+      "years": 25.6
+    },
+    "copper": {
+      "status": "ok",
+      "rows": 6426,
+      "years": 25.6
+    },
+    "natural_gas": {
+      "status": "ok",
+      "rows": 6427,
+      "years": 25.6
+    },
+    "wheat": {
+      "status": "ok",
+      "rows": 6445,
+      "years": 25.7
+    },
+    "corn": {
+      "status": "ok",
+      "rows": 6433,
+      "years": 25.7
+    },
+    "soybean": {
+      "status": "ok",
+      "rows": 6425,
+      "years": 25.5
+    },
+    "platinum": {
+      "status": "ok",
+      "rows": 6449,
+      "years": 28.4
+    },
+    "palladium": {
+      "status": "ok",
+      "rows": 6460,
+      "years": 27.5
+    }
+  },
+  "bonds": {
+    "us_2y": {
+      "status": "ok",
+      "rows": 16576,
+      "years": 66.2
+    },
+    "us_5y": {
+      "status": "ok",
+      "rows": 16077,
+      "years": 64.2
+    },
+    "us_10y": {
+      "status": "ok",
+      "rows": 16077,
+      "years": 64.2
+    },
+    "us_30y": {
+      "status": "ok",
+      "rows": 12307,
+      "years": 49.1
+    },
+    "tlt": {
+      "status": "ok",
+      "rows": 5957,
+      "years": 23.7
+    },
+    "shy": {
+      "status": "ok",
+      "rows": 5957,
+      "years": 23.7
+    },
+    "ief": {
+      "status": "ok",
+      "rows": 5957,
+      "years": 23.7
+    },
+    "tip": {
+      "status": "ok",
+      "rows": 5615,
+      "years": 22.3
+    }
+  },
+  "futures": {
+    "sp500_fut": {
+      "status": "ok",
+      "rows": 6449,
+      "years": 25.5
+    },
+    "nasdaq_fut": {
+      "status": "ok",
+      "rows": 6449,
+      "years": 25.5
+    },
+    "dow_fut": {
+      "status": "ok",
+      "rows": 6040,
+      "years": 24.0
+    },
+    "vix_fut": {
+      "status": "empty",
+      "rows": 0
+    },
+    "kospi200_fut": {
+      "status": "ok",
+      "rows": 7349,
+      "years": 30.0
+    },
+    "us_dollar": {
+      "status": "empty",
+      "rows": 0
+    }
+  },
+  "forex": {
+    "usd_krw": {
+      "status": "ok",
+      "rows": 5793,
+      "years": 22.3
+    },
+    "usd_jpy": {
+      "status": "ok",
+      "rows": 7629,
+      "years": 29.4
+    },
+    "eur_usd": {
+      "status": "ok",
+      "rows": 5795,
+      "years": 22.3
+    },
+    "gbp_usd": {
+      "status": "ok",
+      "rows": 5807,
+      "years": 22.3
+    },
+    "usd_cny": {
+      "status": "ok",
+      "rows": 6197,
+      "years": 24.8
+    },
+    "dxy": {
+      "status": "ok",
+      "rows": 14030,
+      "years": 55.2
+    }
+  },
+  "credit_risk": {
+    "hy_bond": {
+      "status": "ok",
+      "rows": 4775,
+      "years": 19.0
+    },
+    "ig_bond": {
+      "status": "ok",
+      "rows": 5957,
+      "years": 23.7
+    },
+    "junk_spread": {
+      "status": "ok",
+      "rows": 4610,
+      "years": 18.3
+    },
+    "em_bond": {
+      "status": "ok",
+      "rows": 4599,
+      "years": 18.3
+    }
+  },
+  "sector_etf": {
+    "semi_soxx": {
+      "status": "ok",
+      "rows": 6216,
+      "years": 24.7
+    },
+    "energy_xle": {
+      "status": "ok",
+      "rows": 6860,
+      "years": 27.3
+    },
+    "finance_xlf": {
+      "status": "ok",
+      "rows": 6860,
+      "years": 27.3
+    },
+    "tech_xlk": {
+      "status": "ok",
+      "rows": 6860,
+      "years": 27.3
+    },
+    "health_xlv": {
+      "status": "ok",
+      "rows": 6860,
+      "years": 27.3
+    },
+    "consumer_xly": {
+      "status": "ok",
+      "rows": 6860,
+      "years": 27.3
+    },
+    "utility_xlu": {
+      "status": "ok",
+      "rows": 6860,
+      "years": 27.3
+    },
+    "materials_xlb": {
+      "status": "ok",
+      "rows": 6860,
+      "years": 27.3
+    },
+    "industrial_xli": {
+      "status": "ok",
+      "rows": 6860,
+      "years": 27.3
+    },
+    "real_estate": {
+      "status": "ok",
+      "rows": 5411,
+      "years": 21.5
+    },
+    "defense": {
+      "status": "ok",
+      "rows": 5008,
+      "years": 19.9
+    },
+    "clean_energy": {
+      "status": "ok",
+      "rows": 4470,
+      "years": 17.8
+    },
+    "robotics": {
+      "status": "ok",
+      "rows": 3129,
+      "years": 12.4
+    },
+    "battery": {
+      "status": "ok",
+      "rows": 3947,
+      "years": 15.7
+    }
+  },
+  "global_index": {
+    "nikkei225": {
+      "status": "ok",
+      "rows": 15056,
+      "years": 61.2
+    },
+    "hang_seng": {
+      "status": "ok",
+      "rows": 9688,
+      "years": 39.3
+    },
+    "shanghai": {
+      "status": "ok",
+      "rows": 6964,
+      "years": 28.8
+    },
+    "dax": {
+      "status": "ok",
+      "rows": 9673,
+      "years": 38.3
+    },
+    "ftse100": {
+      "status": "ok",
+      "rows": 10673,
+      "years": 42.2
+    },
+    "cac40": {
+      "status": "ok",
+      "rows": 9165,
+      "years": 36.1
+    },
+    "bovespa": {
+      "status": "ok",
+      "rows": 8156,
+      "years": 32.9
+    },
+    "sensex": {
+      "status": "ok",
+      "rows": 7083,
+      "years": 28.8
+    },
+    "asx200": {
+      "status": "ok",
+      "rows": 8433,
+      "years": 33.4
+    },
+    "taiwan": {
+      "status": "ok",
+      "rows": 7045,
+      "years": 28.8
+    }
+  }
+}

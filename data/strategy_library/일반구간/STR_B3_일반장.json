@@ -1,0 +1,75 @@
+{
+  "id": "STR_B3",
+  "group": "데이터기반",
+  "phase": "일반장",
+  "description": "일반장 데이터기반 전략. 주요 선행신호: NASDAQ/NASDAQ. 국면 평균 일간수익 +0.03%, 자연 승률 50%.",
+  "conditions": {
+    "진입": "전일 NASDAQ +1.5% 이상 (해당 시 익일 승률 66%) AND 전일 NASDAQ +1.0% 이상 (해당 시 익일 승률 63%)",
+    "청산": "익절 +2.0% 또는 손절 -2.0%",
+    "제외": "전일 USD_KRW -0.5% 이하 시 진입 보류"
+  },
+  "performance": {
+    "backtest_win_rate": 0.5238,
+    "backtest_return_pct": -0.0079,
+    "real_win_rate": 0.0,
+    "real_return_pct": 0.0,
+    "mdd": -7.76,
+    "status": "검증완료",
+    "phase_daily_win_rate": 0.504,
+    "phase_avg_daily_ret": 0.032,
+    "backtest_trade_count": 21
+  },
+  "analysis": {
+    "top_buy_signals": [
+      {
+        "signal": "nasdaq",
+        "threshold": 1.5,
+        "n": 35,
+        "win_rate": 0.657,
+        "avg_ret": 0.234,
+        "edge": 0.157
+      },
+      {
+        "signal": "nasdaq",
+        "threshold": 1.0,
+        "n": 73,
+        "win_rate": 0.63,
+        "avg_ret": 0.266,
+        "edge": 0.13
+      },
+      {
+        "signal": "nvda",
+        "threshold": 3.0,
+        "n": 61,
+        "win_rate": 0.623,
+        "avg_ret": 0.278,
+        "edge": 0.123
+      }
+    ],
+    "top_sell_signals": [
+      {
+        "signal": "usd_krw",
+        "threshold": -0.5,
+        "n": 52,
+        "win_rate": 0.596,
+        "avg_ret": 0.179,
+        "edge": 0.096
+      },
+      {
+        "signal": "nasdaq",
+        "threshold": -2.0,
+        "n": 7,
+        "win_rate": 0.571,
+        "avg_ret": -0.014,
+        "edge": 0.071
+      }
+    ],
+    "phase_days": 390,
+    "phase_ratio_pct": 0.0
+  },
+  "compatible": [],
+  "incompatible": [],
+  "created_at": "2026-03-31",
+  "updated_at": "2026-04-02",
+  "holding_period": "단기"
+}

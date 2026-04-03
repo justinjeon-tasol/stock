@@ -1,0 +1,30 @@
+{
+  "id": "STR_005",
+  "group": "시장국면",
+  "phase": "하락장",
+  "description": "VIX 25 이상 + 코스피 -1.5% 이하 급락 시 현금 보유 및 방어 ETF 편입",
+  "conditions": {
+    "진입": "VIX 25 이상 & 코스피 -1.5% 이하 & 외국인 순매도 500억 이상",
+    "청산": "VIX 20 이하 회복 또는 코스피 3일 연속 +0.5% 이상",
+    "제외": "해당 없음 (현금 보유 전략)"
+  },
+  "performance": {
+    "backtest_win_rate": 0.45,
+    "backtest_return_pct": 0.135,
+    "real_win_rate": 0.0,
+    "real_return_pct": 0.0,
+    "mdd": -10.95,
+    "status": "백테스팅중",
+    "backtest_trade_count": 20
+  },
+  "compatible": [
+    "STR_006"
+  ],
+  "incompatible": [
+    "STR_003",
+    "STR_004"
+  ],
+  "created_at": "2026-03-31",
+  "updated_at": "2026-04-02",
+  "holding_period": "초단기"
+}

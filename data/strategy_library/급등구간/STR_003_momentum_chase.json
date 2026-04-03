@@ -1,0 +1,31 @@
+{
+  "id": "STR_003",
+  "group": "시장국면",
+  "phase": "대상승장",
+  "description": "SOX 2% 이상 + 나스닥 1.5% 이상 동반 급등 시 반도체 모멘텀 추격 매매",
+  "conditions": {
+    "진입": "SOX +2.0% 이상 & 나스닥 +1.5% 이상 & 거래량 평균 150% 이상 & VIX 20 이하",
+    "청산": "+5% 도달 또는 -3% 손절 또는 당일 종가 전 청산",
+    "제외": "달러 강세(+1% 이상) 시 비중 50% 축소"
+  },
+  "performance": {
+    "backtest_win_rate": 0.4048,
+    "backtest_return_pct": 0.1774,
+    "real_win_rate": 0.0,
+    "real_return_pct": 0.0,
+    "mdd": -20.65,
+    "status": "백테스팅중",
+    "backtest_trade_count": 42
+  },
+  "compatible": [
+    "STR_004"
+  ],
+  "incompatible": [
+    "STR_005",
+    "STR_006",
+    "STR_007"
+  ],
+  "created_at": "2026-03-31",
+  "updated_at": "2026-04-02",
+  "holding_period": "중기"
+}

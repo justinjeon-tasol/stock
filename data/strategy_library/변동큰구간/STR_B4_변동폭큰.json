@@ -1,0 +1,75 @@
+{
+  "id": "STR_B4",
+  "group": "데이터기반",
+  "phase": "변동폭큰",
+  "description": "변동폭큰 데이터기반 전략. 주요 선행신호: SOX/NASDAQ. 국면 평균 일간수익 -0.03%, 자연 승률 48%.",
+  "conditions": {
+    "진입": "전일 SOX +3.0% 이상 (해당 시 익일 승률 67%) AND 전일 NASDAQ +2.0% 이상 (해당 시 익일 승률 60%)",
+    "청산": "익절 +2.3% 또는 손절 -2.0%",
+    "제외": "전일 USD_KRW -0.5% 이하 시 진입 보류"
+  },
+  "performance": {
+    "backtest_win_rate": 0.3846,
+    "backtest_return_pct": -0.3462,
+    "real_win_rate": 0.0,
+    "real_return_pct": 0.0,
+    "mdd": -7.53,
+    "status": "백테스팅중",
+    "phase_daily_win_rate": 0.48,
+    "phase_avg_daily_ret": -0.025,
+    "backtest_trade_count": 13
+  },
+  "analysis": {
+    "top_buy_signals": [
+      {
+        "signal": "sox",
+        "threshold": 3.0,
+        "n": 21,
+        "win_rate": 0.667,
+        "avg_ret": 0.622,
+        "edge": 0.167
+      },
+      {
+        "signal": "nasdaq",
+        "threshold": 2.0,
+        "n": 20,
+        "win_rate": 0.6,
+        "avg_ret": 0.486,
+        "edge": 0.1
+      },
+      {
+        "signal": "usd_krw",
+        "threshold": 1.0,
+        "n": 12,
+        "win_rate": 0.583,
+        "avg_ret": 0.371,
+        "edge": 0.083
+      }
+    ],
+    "top_sell_signals": [
+      {
+        "signal": "usd_krw",
+        "threshold": -0.5,
+        "n": 31,
+        "win_rate": 0.516,
+        "avg_ret": -0.0,
+        "edge": 0.016
+      },
+      {
+        "signal": "usd_krw",
+        "threshold": -0.3,
+        "n": 62,
+        "win_rate": 0.452,
+        "avg_ret": -0.081,
+        "edge": -0.048
+      }
+    ],
+    "phase_days": 229,
+    "phase_ratio_pct": 0.0
+  },
+  "compatible": [],
+  "incompatible": [],
+  "created_at": "2026-03-31",
+  "updated_at": "2026-04-02",
+  "holding_period": "초단기"
+}

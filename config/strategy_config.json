@@ -1,0 +1,674 @@
+{
+  "version": "1.2",
+  "phase_weights": {
+    "대상승장": {
+      "aggressive": 1,
+      "defensive": 0,
+      "cash": 0
+    },
+    "상승장": {
+      "aggressive": 0.8,
+      "defensive": 0,
+      "cash": 0.2
+    },
+    "일반장": {
+      "aggressive": 0.6,
+      "defensive": 0,
+      "cash": 0.4
+    },
+    "변동폭큰": {
+      "aggressive": 0.2,
+      "defensive": 0.2,
+      "cash": 0.6
+    },
+    "하락장": {
+      "aggressive": 0,
+      "defensive": 0.4,
+      "cash": 0.6
+    },
+    "대폭락장": {
+      "aggressive": 0,
+      "defensive": 0.2,
+      "cash": 0.8
+    }
+  },
+  "stock_universe": {
+    "반도체": [
+      {
+        "code": "005930",
+        "name": "삼성전자"
+      },
+      {
+        "code": "000660",
+        "name": "SK하이닉스"
+      },
+      {
+        "code": "042700",
+        "name": "한미반도체"
+      }
+    ],
+    "2차전지": [
+      {
+        "code": "373220",
+        "name": "LG에너지솔루션"
+      },
+      {
+        "code": "006400",
+        "name": "삼성SDI"
+      }
+    ],
+    "정유": [
+      {
+        "code": "096770",
+        "name": "SK이노베이션"
+      },
+      {
+        "code": "010950",
+        "name": "S-Oil"
+      }
+    ],
+    "지수ETF": [
+      {
+        "code": "069500",
+        "name": "KODEX 200"
+      },
+      {
+        "code": "229200",
+        "name": "KODEX 코스닥150"
+      }
+    ],
+    "바이오": [
+      {
+        "code": "068270",
+        "name": "셀트리온"
+      },
+      {
+        "code": "207940",
+        "name": "삼성바이오로직스"
+      }
+    ],
+    "방산": [
+      {
+        "code": "012450",
+        "name": "한화에어로스페이스"
+      },
+      {
+        "code": "079550",
+        "name": "LIG넥스원"
+      }
+    ],
+    "원전": [
+      {
+        "code": "034020",
+        "name": "두산에너빌리티"
+      },
+      {
+        "code": "130500",
+        "name": "한전기술"
+      }
+    ],
+    "자동차": [
+      {
+        "code": "005380",
+        "name": "현대차"
+      },
+      {
+        "code": "000270",
+        "name": "기아"
+      }
+    ],
+    "방어ETF": [
+      {
+        "code": "148070",
+        "name": "KOSEF 국고채10년"
+      },
+      {
+        "code": "132030",
+        "name": "KODEX 골드선물(H)"
+      }
+    ]
+  },
+  "leading_indicator_mapping": {
+    "nasdaq_surge": {
+      "threshold_pct": 1.5,
+      "kr_sectors": [
+        "지수ETF"
+      ],
+      "direction": "BUY",
+      "kr_themes": []
+    },
+    "sox_surge": {
+      "threshold_pct": 2,
+      "kr_sectors": [
+        "반도체"
+      ],
+      "direction": "BUY",
+      "kr_themes": [
+        "AI/HBM",
+        "반도체장비"
+      ]
+    },
+    "nvidia_surge": {
+      "threshold_pct": 3,
+      "kr_sectors": [
+        "반도체"
+      ],
+      "direction": "BUY",
+      "kr_themes": [
+        "AI/HBM"
+      ]
+    },
+    "amd_surge": {
+      "threshold_pct": 3,
+      "kr_sectors": [
+        "반도체"
+      ],
+      "direction": "BUY",
+      "kr_themes": [
+        "AI/HBM"
+      ]
+    },
+    "tesla_strong": {
+      "threshold_pct": 2,
+      "kr_sectors": [
+        "2차전지"
+      ],
+      "direction": "BUY",
+      "kr_themes": []
+    },
+    "wti_surge": {
+      "threshold_pct": 3,
+      "kr_sectors": [
+        "정유"
+      ],
+      "direction": "BUY",
+      "kr_themes": []
+    },
+    "gold_strong": {
+      "threshold_pct": 1.5,
+      "kr_sectors": [],
+      "direction": "AVOID",
+      "kr_themes": []
+    },
+    "vix_spike": {
+      "threshold_val": 30,
+      "kr_sectors": [],
+      "direction": "AVOID",
+      "kr_themes": []
+    },
+    "dollar_strong": {
+      "threshold_pct": 1,
+      "kr_sectors": [],
+      "direction": "AVOID",
+      "kr_themes": []
+    },
+    "copper_strong": {
+      "threshold_pct": 2,
+      "kr_sectors": [
+        "전반"
+      ],
+      "direction": "BUY",
+      "kr_themes": []
+    },
+    "nasdaq_crash": {
+      "threshold_pct": -2.0,
+      "kr_sectors": [
+        "지수ETF"
+      ],
+      "direction": "SELL",
+      "kr_themes": []
+    },
+    "sox_crash": {
+      "threshold_pct": -3.0,
+      "kr_sectors": [
+        "반도체"
+      ],
+      "direction": "SELL",
+      "kr_themes": [
+        "AI/HBM",
+        "반도체장비"
+      ]
+    },
+    "tesla_crash": {
+      "threshold_pct": -3.0,
+      "kr_sectors": [
+        "2차전지"
+      ],
+      "direction": "SELL",
+      "kr_themes": []
+    },
+    "vix_warning": {
+      "threshold_val": 25,
+      "kr_sectors": [],
+      "direction": "REDUCE",
+      "kr_themes": [],
+      "reduce_pct": 50
+    },
+    "semi_soxx": {
+      "threshold_pct": 3.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "005930",
+        "000660",
+        "064350",
+        "024110",
+        "033780"
+      ],
+      "backtest_win_rate": 0.6452,
+      "backtest_avg_ret": 1.097,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "robotics": {
+      "threshold_pct": 2.5,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "064350",
+        "052690",
+        "402340",
+        "012450",
+        "047810"
+      ],
+      "backtest_win_rate": 0.6863,
+      "backtest_avg_ret": 1.6412,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "nasdaq_fut": {
+      "threshold_pct": 3.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "052690",
+        "064350",
+        "241560",
+        "011790",
+        "047810"
+      ],
+      "backtest_win_rate": 0.6923,
+      "backtest_avg_ret": 1.672,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "defense": {
+      "threshold_pct": 3.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "047810",
+        "000880",
+        "034020",
+        "006800",
+        "247540"
+      ],
+      "backtest_win_rate": 0.7222,
+      "backtest_avg_ret": 1.9182,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "tech_xlk": {
+      "threshold_pct": 3.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "064350",
+        "047050",
+        "079550",
+        "069500",
+        "042700"
+      ],
+      "backtest_win_rate": 0.6531,
+      "backtest_avg_ret": 1.7799,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "nasdaq": {
+      "threshold_pct": 2.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "047050",
+        "034020",
+        "402340",
+        "069500",
+        "042700"
+      ],
+      "backtest_win_rate": 0.6484,
+      "backtest_avg_ret": 0.5421,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "clean_energy": {
+      "threshold_pct": 3.0,
+      "direction": "AVOID",
+      "kr_sectors": [],
+      "kr_codes": [
+        "006800",
+        "138040",
+        "267250",
+        "088980",
+        "069500"
+      ],
+      "backtest_win_rate": 0.6471,
+      "backtest_avg_ret": 1.8819,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "battery": {
+      "threshold_pct": 2.5,
+      "direction": "AVOID",
+      "kr_sectors": [],
+      "kr_codes": [
+        "079550",
+        "064350",
+        "003850",
+        "042700",
+        "088980"
+      ],
+      "backtest_win_rate": 0.6529,
+      "backtest_avg_ret": 0.6179,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "dow": {
+      "threshold_pct": 2.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "000100",
+        "047810",
+        "005930",
+        "064350",
+        "028050"
+      ],
+      "backtest_win_rate": 0.7297,
+      "backtest_avg_ret": 2.3137,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "sp500": {
+      "threshold_pct": 2.5,
+      "direction": "AVOID",
+      "kr_sectors": [],
+      "kr_codes": [
+        "064350",
+        "241560",
+        "180640",
+        "028050",
+        "298050"
+      ],
+      "backtest_win_rate": 0.6863,
+      "backtest_avg_ret": 1.3853,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "energy_xle": {
+      "threshold_pct": 3.0,
+      "direction": "AVOID",
+      "kr_sectors": [],
+      "kr_codes": [
+        "028050",
+        "207940",
+        "047050",
+        "069500",
+        "088980"
+      ],
+      "backtest_win_rate": 0.661,
+      "backtest_avg_ret": 1.5549,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "copper": {
+      "threshold_pct": 3.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "028050",
+        "402340",
+        "088980",
+        "069500",
+        "052690"
+      ],
+      "backtest_win_rate": 0.6471,
+      "backtest_avg_ret": 2.0109,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "sp500_fut": {
+      "threshold_pct": 2.5,
+      "direction": "AVOID",
+      "kr_sectors": [],
+      "kr_codes": [
+        "064350",
+        "241560",
+        "047810",
+        "021240",
+        "180640"
+      ],
+      "backtest_win_rate": 0.6604,
+      "backtest_avg_ret": 1.2869,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "usd_krw": {
+      "threshold_pct": 2.0,
+      "direction": "AVOID",
+      "kr_sectors": [],
+      "kr_codes": [
+        "042700",
+        "003850",
+        "002790",
+        "071050",
+        "138040"
+      ],
+      "backtest_win_rate": 0.6667,
+      "backtest_avg_ret": 1.8434,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "gold": {
+      "threshold_pct": 2.5,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "047810",
+        "352820",
+        "007070",
+        "011070",
+        "003670"
+      ],
+      "backtest_win_rate": 0.6939,
+      "backtest_avg_ret": 0.5622,
+      "n_stocks": 10,
+      "source": "extended_backtest_30yr"
+    },
+    "sox": {
+      "threshold_pct": 3.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "005930",
+        "064350",
+        "069500",
+        "079550",
+        "088980"
+      ],
+      "backtest_win_rate": 0.6457,
+      "backtest_avg_ret": 1.0306,
+      "n_stocks": 9,
+      "source": "extended_backtest_30yr"
+    },
+    "us_10y": {
+      "threshold_pct": 3.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "088980",
+        "069500",
+        "247540",
+        "373220",
+        "402340"
+      ],
+      "backtest_win_rate": 0.6389,
+      "backtest_avg_ret": 1.289,
+      "n_stocks": 6,
+      "source": "extended_backtest_30yr"
+    },
+    "amd": {
+      "threshold_pct": 3.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "402340",
+        "088980",
+        "069500",
+        "267250",
+        "316140"
+      ],
+      "backtest_win_rate": 0.6043,
+      "backtest_avg_ret": 0.5504,
+      "n_stocks": 6,
+      "source": "extended_backtest_30yr"
+    },
+    "nvidia": {
+      "threshold_pct": 2.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "088980",
+        "069500",
+        "402340",
+        "352820",
+        "316140"
+      ],
+      "backtest_win_rate": 0.5862,
+      "backtest_avg_ret": 0.5604,
+      "n_stocks": 6,
+      "source": "extended_backtest_30yr"
+    },
+    "vix": {
+      "threshold_pct": 3.0,
+      "direction": "AVOID",
+      "kr_sectors": [],
+      "kr_codes": [
+        "088980",
+        "402340",
+        "267250",
+        "069500",
+        "316140"
+      ],
+      "backtest_win_rate": 0.5727,
+      "backtest_avg_ret": 0.578,
+      "n_stocks": 5,
+      "source": "extended_backtest_30yr"
+    },
+    "wti": {
+      "threshold_pct": 3.0,
+      "direction": "AVOID",
+      "kr_sectors": [],
+      "kr_codes": [
+        "088980",
+        "069500",
+        "352820",
+        "316140",
+        "259960"
+      ],
+      "backtest_win_rate": 0.5873,
+      "backtest_avg_ret": 1.2994,
+      "n_stocks": 5,
+      "source": "extended_backtest_30yr"
+    },
+    "tesla": {
+      "threshold_pct": 1.0,
+      "direction": "BUY",
+      "kr_sectors": [],
+      "kr_codes": [
+        "402340",
+        "316140",
+        "088980",
+        "069500",
+        "033780"
+      ],
+      "backtest_win_rate": 0.5775,
+      "backtest_avg_ret": 0.4893,
+      "n_stocks": 5,
+      "source": "extended_backtest_30yr"
+    }
+  },
+  "theme_indicator_mapping": {
+    "AI/HBM": {
+      "tickers": [
+        "NVDA",
+        "AMD"
+      ],
+      "threshold_pct": 3,
+      "direction": "BUY",
+      "kr_sectors": [
+        "반도체"
+      ]
+    },
+    "방산": {
+      "tickers": [
+        "LMT",
+        "RTX"
+      ],
+      "threshold_pct": 2,
+      "direction": "BUY",
+      "kr_sectors": [
+        "방산"
+      ]
+    },
+    "원전": {
+      "tickers": [
+        "CCJ"
+      ],
+      "threshold_pct": 2,
+      "direction": "BUY",
+      "kr_sectors": [
+        "원전"
+      ]
+    },
+    "로봇": {
+      "tickers": [
+        "ROBO"
+      ],
+      "threshold_pct": 2,
+      "direction": "BUY",
+      "kr_sectors": [
+        "자동차"
+      ]
+    },
+    "반도체장비": {
+      "tickers": [
+        "AMAT",
+        "KLAC"
+      ],
+      "threshold_pct": 2.5,
+      "direction": "BUY",
+      "kr_sectors": [
+        "반도체"
+      ]
+    }
+  },
+  "classification_rules": {
+    "sector_concentration_max_pct": 0.5,
+    "theme_boost_multiplier": 1.3,
+    "sector_decay": {
+      "1": 1,
+      "2": 0.85,
+      "3": 0.7,
+      "4": 0.55
+    }
+  },
+  "recommendation_rules": {
+    "max_stocks": 10,
+    "min_confidence": 0.5,
+    "futures_threshold_pct": 0.3
+  },
+  "risk_management": {
+    "max_stock_weight_pct": 0.2,
+    "comment": "단일 종목 최대 비중: 총자산 대비 15% 초과 불가"
+  }
+}

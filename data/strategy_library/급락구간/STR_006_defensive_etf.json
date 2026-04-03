@@ -1,0 +1,30 @@
+{
+  "id": "STR_006",
+  "group": "시장국면",
+  "phase": "하락장",
+  "description": "급락장 초기 KODEX 인버스 ETF 매수로 헤지 포지션 구성",
+  "conditions": {
+    "진입": "코스피 -2.0% 이하 & VIX 30 이상 & 외국인 순매도 1000억 이상",
+    "청산": "코스피 반등 +1.5% 또는 VIX 25 이하 회복",
+    "제외": "이미 인버스 포지션 보유 중이면 추가 진입 금지"
+  },
+  "performance": {
+    "backtest_win_rate": 0.5714,
+    "backtest_return_pct": 1.2849,
+    "real_win_rate": 0.0,
+    "real_return_pct": 0.0,
+    "mdd": -4.94,
+    "status": "백테스팅중",
+    "backtest_trade_count": 7
+  },
+  "compatible": [
+    "STR_005"
+  ],
+  "incompatible": [
+    "STR_003",
+    "STR_004"
+  ],
+  "created_at": "2026-03-31",
+  "updated_at": "2026-04-02",
+  "holding_period": "초단기"
+}

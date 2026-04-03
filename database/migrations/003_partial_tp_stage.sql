@@ -1,0 +1,1 @@
+ALTER TABLE positions ADD COLUMN IF NOT EXISTS partial_tp_stage int NOT NULL DEFAULT 0;

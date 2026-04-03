@@ -1,0 +1,31 @@
+{
+  "id": "STR_004",
+  "group": "섹터연계",
+  "phase": "대상승장",
+  "description": "엔비디아/AMD 3% 이상 급등 시 AI/HBM 테마 추종 매매",
+  "conditions": {
+    "진입": "NVDA 또는 AMD +3.0% 이상 & SOX +1.5% 이상 & 외국인 순매수",
+    "청산": "+6% 도달 또는 -3% 손절",
+    "제외": "VIX 25 초과 시 진입 금지"
+  },
+  "performance": {
+    "backtest_win_rate": 0.4412,
+    "backtest_return_pct": 0.8835,
+    "real_win_rate": 0.0,
+    "real_return_pct": 0.0,
+    "mdd": -25.66,
+    "status": "백테스팅중",
+    "backtest_trade_count": 102
+  },
+  "compatible": [
+    "STR_003"
+  ],
+  "incompatible": [
+    "STR_005",
+    "STR_006",
+    "STR_007"
+  ],
+  "created_at": "2026-03-31",
+  "updated_at": "2026-04-02",
+  "holding_period": "단기"
+}
