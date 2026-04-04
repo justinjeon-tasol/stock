@@ -1,349 +1,213 @@
-1# 미국-한국 주식 연계 자동매매 시스템
+# 미국-한국 주식 연계 자동매매 시스템
 
 ## 프로젝트 개요
 
 미국 증시(선행)와 한국 증시(후행)의 상관관계를 분석하여
 시장 국면을 자동 판단하고 전략과 가중치를 조정하며
-모의/실전 자동매매를 수행하는 멀티에이전트 시스템.
+KIS API를 통한 모의투자 자동매매를 수행하는 멀티에이전트 시스템.
 
 ### 핵심 철학
 - 전략(로직)과 코드(시스템)를 완전히 분리
 - 전략은 JSON 설정 파일로 관리, 코드는 안정적으로 유지
-- 에이전트 하나씩 만들고 테스트 확인 후 다음 연결
 - 과최적화 방지: 구간별 독립 분석, 단순 조건 우선
 - 전략 라이브러리와 이슈 라이브러리를 자산으로 누적
+
+### 현재 상태
+- **모의투자 운영 중** (GCP VM에서 PM2로 30분 주기 실행)
+- 전체 에이전트 구현 완료, 프론트엔드 완성
+- 상세 보고서: `SYSTEM_REPORT.md` 참조
+
+---
+
+## 배포 구조
+
+| 구분 | 호스팅 | 실행 방식 |
+|------|--------|----------|
+| Python 백엔드 | GCP VM | PM2 (`python main.py --mode schedule`) |
+| Next.js 프론트엔드 | Vercel | GitHub main push 시 자동 배포 |
+| 데이터베이스 | Supabase | PostgreSQL + Realtime |
+
+### Git 브랜치 전략
+- `dev`: 모든 개발 작업 → `main`: 검증 후 merge (배포)
+- 상세: `GIT_WORKFLOW.md` 참조
 
 ---
 
 ## 기술 스택
 
-| 항목 | 기술 | 비고 |
-|------|------|------|
-| 언어 | Python 3.11 | |
-| DB | Supabase (PostgreSQL) | 무료 플랜으로 시작 |
-| 주문 API | 한국투자증권 KIS API | 모의투자 기준 |
-| 미국 데이터 | yfinance | 무료 |
-| 한국 데이터 | pykrx + KIS API | |
-| AI 판단 | Claude API (Sonnet 4.6) | 복잡한 판단만 호출 |
-| 알림 | 텔레그램 Bot API | |
-| 뉴스 | RSS 피드 (무료) | 추후 유료 API 고려 |
+| 항목 | 기술 |
+|------|------|
+| 백엔드 | Python 3.11 (async/await) |
+| 프론트엔드 | Next.js 14 + TypeScript + Tailwind CSS + Recharts |
+| DB | Supabase (PostgreSQL + Realtime 구독) |
+| 주문 API | 한국투자증권 KIS API (모의투자) |
+| 미국 데이터 | yfinance |
+| 한국 데이터 | pykrx + KIS API |
+| 알림 | 텔레그램 Bot API |
+| 프로세스 관리 | PM2 |
 
 ---
 
-## 에이전트 구조 (11개)
-
-### 레이어별 구성
+## 파이프라인 흐름
 
 ```
-[🎯 오케스트레이터]
-        │
-┌───────┼───────────────────┐
-↓       ↓                   ↓
-데이터  전략                 운영
-레이어  레이어               레이어
+[사전 체크] KIS 토큰 → DSL/WSL 확인
+     │
+[Step 1] DC: 데이터수집 (미국/한국/원자재)
+     │
+[Step 2] MA + IM: 시장분석 + 이슈감지 (병렬)
+     │         + 보유 포지션 검토 + 청산 계획
+     │
+[Step 3] WA: 가중치조정 → 공격/방어/현금 비중 + 종목 선정
+     │
+[Step 4] SR: 전략매칭 → 전략 라이브러리에서 조건 필터링
+     │
+[Step 5] EX: 주문실행 → KIS API + 포지션 기록 + 텔레그램
 ```
 
-### 데이터 레이어 (3개)
-
-| # | 에이전트 | 파일 | 핵심 역할 |
-|---|---------|------|---------|
-| 1 | 🎯 오케스트레이터 | orchestrator.py | 전체 지휘, 에이전트 시작/중지, 최종 판단 |
-| 2 | 🌐 데이터수집 | data_collector.py | 미국/한국/원자재/뉴스 수집 (4개 모듈) |
-| 3 | 📦 전처리 | preprocessor.py | 표준 데이터폼 변환, 유효성 검증, 이상값 처리 |
-
-### 전략 레이어 (6개)
-
-| # | 에이전트 | 파일 | 핵심 역할 |
-|---|---------|------|---------|
-| 4 | 🧠 시장분석 | market_analyzer.py | 국면감지 + 추세예측 + 선후행 상관관계 분석 |
-| 5 | 📚 이슈관리 | issue_manager.py | 뉴스→이슈 분류, 라이브러리 매핑, 신규 등록 |
-| 6 | ⚖️ 가중치조정 | weight_adjuster.py | 국면+이슈 반영한 전략 비중 자동 재배분 |
-| 7 | 🔬 전략연구 | strategy_researcher.py | 전략 탐색/백테스팅/최적화/라이브러리 관리 |
-| 8 | 🎮 로직적용 | logic_applier.py | 검증된 전략 실전 적용, 국면별 전략 교체 |
-| 9 | ⚡ 실행 | executor.py | KIS API 주문, 손절/익절 관리, 텔레그램 알림 |
-
-### 운영 레이어 (2개)
-
-| # | 에이전트 | 파일 | 핵심 역할 |
-|---|---------|------|---------|
-| 10 | 🔧 시스템관리 | system_manager.py | 코어개발, 코드 자동수정, 패치 적용 |
-| 11 | 🐛 디버깅 | debugger.py | 독립적 24시간 오류 감시, 즉각 보고 (지시 안 받음) |
-
-### 디버깅 에이전트 독립 원칙
-- 어떤 에이전트의 지시도 받지 않음
-- 오직 오케스트레이터에만 보고
-- 모든 에이전트를 24시간 감시
-- 다른 업무 없이 오류 감시만 전담
+### 독립 실행 루프 (파이프라인과 별도)
+- 손절/익절 감시: 1분(고변동성) ~ 3분(일반) 간격
+- 디버거: 전 에이전트 30초 헬스체크
+- 일간 백테스트: 장 종료 후 자동 실행
 
 ---
 
-## 통신 프로토콜
+## 에이전트 구조
 
-### 표준 메시지 구조 (모든 통신 필수)
+### 핵심 에이전트 (파이프라인)
 
-```json
-{
-  "header": {
-    "msg_id":    "[에이전트코드]_[날짜]_[시분초]_[순번]",
-    "version":   "1.0",
-    "from":      "송신 에이전트명",
-    "to":        "수신 에이전트명",
-    "timestamp": "ISO 8601 형식",
-    "priority":  "CRITICAL | HIGH | NORMAL | LOW",
-    "msg_type":  "DATA | SIGNAL | ORDER | RESPONSE | ERROR | HEARTBEAT | COMMAND | ALERT"
-  },
-  "body": {
-    "data_type": "데이터 타입명",
-    "payload":   {}
-  },
-  "status": {
-    "code":    "OK | ERROR | TIMEOUT | RETRY",
-    "message": "상태 메시지"
-  }
-}
-```
+| 코드 | 에이전트 | 파일 | 역할 |
+|------|---------|------|------|
+| OR | 오케스트레이터 | `orchestrator.py` | 파이프라인 지휘, 세션 관리, 최종 판단 |
+| DC | 데이터수집 | `agents/data_collector.py` | yfinance/pykrx 실시간 수집 |
+| PP | 전처리 | `agents/preprocessor.py` | 표준화, 이상값 탐지 |
+| MA | 시장분석 | `agents/market_analyzer.py` | 6단계 국면 판별, 12개 선행지표 |
+| IM | 이슈관리 | `agents/issue_manager.py` | 7개 카테고리 이슈 탐지 |
+| WA | 가중치조정 | `agents/weight_adjuster.py` | 비중 배분, 종목 선정, SIGNAL 생성 |
+| SR | 전략연구 | `agents/strategy_researcher.py` | 전략 매칭 + 일간 백테스팅 |
+| EX | 실행 | `agents/executor.py` | KIS 주문, DCA, 분할익절, 텔레그램 |
+| DB | 디버깅 | `agents/debugger.py` | 독립 24시간 감시, 오류만 전담 |
 
-### 에이전트 코드 (msg_id 생성용)
+### 서비스 클래스 (에이전트가 아닌 공유 모듈)
 
-| 코드 | 에이전트 |
-|------|---------|
-| OR | 오케스트레이터 |
-| DC | 데이터수집 |
-| PP | 전처리 |
-| MA | 시장분석 |
-| IM | 이슈관리 |
-| WA | 가중치조정 |
-| SR | 전략연구 |
-| LA | 로직적용 |
-| EX | 실행 |
-| SM | 시스템관리 |
-| DB | 디버깅 |
+| 파일 | 역할 |
+|------|------|
+| `agents/risk_manager.py` | DSL/WSL, 연속손실, 회복모드, 포지션 한도 |
+| `agents/position_manager.py` | 포지션 CRUD, 청산 조건 판단 |
+| `agents/horizon_manager.py` | 4단계 보유기간 관리, 트레일링 스탑 |
+| `agents/classification_loader.py` | 종목 분류 로더 (섹터/테마 역인덱싱) |
 
-### 데이터 타입 8종 페이로드 정의
+### 기타 파일 (비활성 또는 보조)
 
-#### US_MARKET
-```json
-{
-  "nasdaq":  { "value": 0.0, "change_pct": 0.0, "volume_ratio": 0.0 },
-  "sox":     { "value": 0.0, "change_pct": 0.0, "volume_ratio": 0.0 },
-  "sp500":   { "value": 0.0, "change_pct": 0.0, "volume_ratio": 0.0 },
-  "vix":     { "value": 0.0, "change_pct": 0.0 },
-  "usd_krw": { "value": 0.0, "change_pct": 0.0 },
-  "futures": { "value": 0.0, "direction": "UP | DOWN | FLAT" }
-}
-```
-
-#### KR_MARKET
-```json
-{
-  "kospi":           { "value": 0.0, "change_pct": 0.0, "volume_ratio": 0.0 },
-  "kosdaq":          { "value": 0.0, "change_pct": 0.0, "volume_ratio": 0.0 },
-  "foreign_net":     0,
-  "institution_net": 0,
-  "stocks": {
-    "종목코드": { "name": "종목명", "price": 0, "change_pct": 0.0 }
-  }
-}
-```
-
-#### COMMODITY
-```json
-{
-  "wti":     { "value": 0.0, "change_pct": 0.0 },
-  "gold":    { "value": 0.0, "change_pct": 0.0 },
-  "copper":  { "value": 0.0, "change_pct": 0.0 },
-  "lithium": { "value": 0.0, "change_pct": 0.0 }
-}
-```
-
-#### MARKET_PHASE
-```json
-{
-  "phase":        "안정화 | 급등장 | 급락장 | 변동폭큰",
-  "confidence":   0.0,
-  "elapsed_days": 0,
-  "forecast": {
-    "duration_days": { "min": 0, "max": 0 },
-    "end_date":      "YYYY-MM-DD",
-    "next_phase":    "예측 다음 국면"
-  },
-  "strategy_timeline": {
-    "D0_D3": { "cash_pct": 0, "strategy": "전략명" }
-  }
-}
-```
-
-#### ISSUE
-```json
-{
-  "issue_id":           "이슈 ID",
-  "category":          "통화금리 | 지정학 | 경제지표 | 산업섹터 | 시장구조 | 블랙스완",
-  "severity":          "LOW | MEDIUM | HIGH | CRITICAL",
-  "confidence":        0.0,
-  "duration_forecast": { "min": 0, "max": 0 },
-  "affected_sectors":  [],
-  "strategy_override": false
-}
-```
-
-#### SIGNAL
-```json
-{
-  "signal_id":    "신호 ID",
-  "direction":    "BUY | SELL | HOLD",
-  "confidence":   0.0,
-  "phase":        "시장 국면",
-  "issue_factor": null,
-  "targets": [
-    { "code": "종목코드", "name": "종목명", "weight": 0.0 }
-  ],
-  "weight_config": {
-    "strategy_a": 0.0,
-    "cash_pct":   0.0
-  },
-  "reason": "신호 생성 근거"
-}
-```
-
-#### ORDER
-```json
-{
-  "order_id":    "주문 ID",
-  "signal_id":   "신호 ID",
-  "action":      "BUY | SELL",
-  "code":        "종목코드",
-  "name":        "종목명",
-  "quantity":    0,
-  "price_type":  "MARKET | LIMIT",
-  "strategy_id": "전략 ID",
-  "stop_loss":   0.0,
-  "take_profit": 0.0,
-  "mode":        "MOCK | REAL"
-}
-```
-
-#### ERROR
-```json
-{
-  "error_id":   "오류 ID",
-  "level":      "LOW | MEDIUM | HIGH | CRITICAL",
-  "from_agent": "발생 에이전트",
-  "error_code": "오류 코드",
-  "message":    "오류 메시지",
-  "retry_count": 0,
-  "auto_fix":   false,
-  "action":     "조치 내용"
-}
-```
-
-### 통신 방식
-
-| 구간 | 방식 | 설명 |
-|------|------|------|
-| 데이터수집 → 전처리 | 단방향 | 응답 불필요 |
-| 전처리 → 시장분석 | 단방향 | |
-| 전처리 → 이슈관리 | 단방향 | |
-| 시장분석 → 가중치조정 | 단방향 | |
-| 이슈관리 → 가중치조정 | 단방향 | |
-| 가중치조정 → 전략연구 | 양방향 | 전략 요청/응답 |
-| 가중치조정 → 로직적용 | 단방향 | |
-| 로직적용 → 실행 | 단방향 | |
-| 모든 에이전트 → 디버깅 | 단방향 | 감시용 |
-| 모든 에이전트 → 오케스트레이터 | 단방향 | 보고용 |
-
-### 타임아웃 규약
-
-| 에이전트 | 타임아웃 | 재시도 |
-|---------|---------|-------|
-| 데이터수집 | 30초 | 3회 |
-| 전처리 | 1초 | 3회 |
-| 시장분석 | 5초 | 3회 |
-| 이슈관리 | 3초 | 3회 |
-| 가중치조정 | 2초 | 3회 |
-| 전략연구 | 60초 | 2회 |
-| 로직적용 | 2초 | 3회 |
-| 실행 | 5초 | 3회 |
-| 디버깅 | 즉시 | - |
-
-### HEARTBEAT 규약
-- 모든 에이전트 30초마다 HEARTBEAT 전송
-- 30초 무응답 → 디버깅: 경고
-- 60초 무응답 → 디버깅: HIGH 오류
-- 90초 무응답 → 오케스트레이터: 강제 재시작
-
-### 오류 처리 4단계
-1. 발생 에이전트: ERROR 메시지 생성 → 디버깅에 전송 → 자체 재시도 (최대 3회)
-2. 디버깅 에이전트: 등급 판단 → CRITICAL 시 전체 매매 중단
-3. 시스템관리 에이전트: 원인 분석 → 자동 수정 시도
-4. 오케스트레이터: 최종 판단 → 재시작 또는 텔레그램 알림
-
-### 버전 관리 원칙
-- 필드 추가: 1.0 → 1.1 (하위 호환)
-- 구조 변경: 1.0 → 2.0 (호환 불가)
-- 버전 불일치 시 ERROR 반환
+| 파일 | 상태 |
+|------|------|
+| `agents/logic_applier.py` | 비활성 — SR에 흡수됨 |
+| `agents/system_manager.py` | 비활성 — 디버거가 대체 |
+| `agents/recommender.py` | 보조 — 추천 텍스트 생성 |
+| `agents/position_analyst.py` | 보조 — 포트폴리오 분석 |
 
 ---
 
 ## 시장 국면 분류 (6단계)
 
-KOSPI 20일 누적 수익률 + VIX + 10일 실현 변동성 기반 자동 분류.
-`data/history/phase_classifier.py` → `phase_classified.csv` 생성.
+KOSPI 20일 누적 수익률 + VIX 기반 자동 분류.
 
-| 국면 | KOSPI 20일 수익률 | VIX | 특징 |
-|------|----------------|-----|------|
-| 대상승장 | +10% 이상 | - | 강한 상승 추세, 풀 공격 |
-| 상승장   | +3% ~ +10% | - | 상승 추세, 80% 공격 |
-| 일반장   | -3% ~ +3% | 20 이하 | 낮은 변동성, 60% 공격 |
-| 변동폭큰 | -3% ~ +3% | 20~35 | 방향 불명확, 매매 보류 |
-| 하락장   | -3% ~ -10% | - | 하락 추세, 방어 전환 |
-| 대폭락장 | -10% 이하 or VIX≥35 | 35+ | 패닉 구간, 현금 유지 |
-
-### 국면별 기본 가중치
-
-| 국면 | 공격전략 | 방어전략 | 현금 |
-|------|---------|---------|------|
-| 대상승장 | 100% | 0% | 0% |
-| 상승장   | 80% | 0% | 20% |
-| 일반장   | 60% | 0% | 40% |
-| 변동폭큰 | 20% | 20% | 60% |
-| 하락장   | 0% | 40% | 60% |
-| 대폭락장 | 0% | 20% | 80% |
-
-### 추세 전환 신호 (3개 이상 동시 충족 시 전환)
-- 하락→상승: RSI 30 이하 반등 / 거래량 급감 / VIX 고점 하락 / 외국인 순매도 감소
-- 상승→하락: RSI 70 이상 / 거래량 감소하며 상승 / 외국인 순매수 감소 / VIX 상승
+| 국면 | 조건 | 공격 | 방어 | 현금 |
+|------|------|------|------|------|
+| 대상승장 | KOSPI 20일 ≥ +10% | 100% | 0% | 0% |
+| 상승장 | +3% ~ +10% | 80% | 0% | 20% |
+| 일반장 | -3% ~ +3%, VIX < 20 | 60% | 0% | 40% |
+| 변동폭큰 | -3% ~ +3%, VIX ≥ 20 | 20% | 20% | 60% |
+| 하락장 | -3% ~ -10% | 0% | 40% | 60% |
+| 대폭락장 | ≤ -10% 또는 VIX ≥ 35 | 0% | 20% | 80% |
 
 ---
 
-## 투자 기간 (Holding Period)
+## 보유기간별 청산 기준
 
-전략 카드의 `holding_period` 필드로 관리. 기간별 청산 기준이 다르다.
 설정 파일: `config/horizon_config.json`
 
-| 기간 | 보유 기간 | 익절 | 손절 | 트레일링 스탑 | 강제 청산 조건 |
-|------|---------|------|------|------------|-------------|
-| 초단기 | 1~3시간 | +0.8% | -0.5% | 없음 | 15:20 장 마감 전 전량 청산 |
-| 단기 | 1~3일 | +2.5% | -1.5% | 없음 | 하락장/대폭락장 국면 전환 시 |
-| 중기 | 1~4주 | +8.0% | -3.0% | +3% 이상 수익 시 -2% 하락 청산 | 변동폭큰 이하 국면 전환 시 |
-| 장기 | 1~3개월 | +20.0% | -7.0% | +8% 이상 수익 시 -5% 하락 청산 | 하락장/대폭락장 전환 시 |
+| 기간 | 보유 | 익절 | 손절 | 트레일링 (활성/하락) |
+|------|------|------|------|-------------------|
+| 초단기 | ~3시간 | +1.5% | -0.7% | 없음 (15:20 강제청산) |
+| 단기 | 1~5일 | +10% | -2.0% | +2.0% 활성 → -1.5% 청산 |
+| 중기 | 1~20일 | +15% | -3.0% | +3.0% 활성 → -2.5% 청산 |
+| 장기 | 1~90일 | +25% | -5.0% | +8.0% 활성 → -4.0% 청산 |
 
-### 국면별 기본 투자 기간
-| 국면 | 기본 기간 | 이유 |
-|------|---------|------|
-| 대상승장 | 중기 | 추세 지속 기간 길고 변동성 낮음 |
-| 상승장 | 단기 | 방향성은 있으나 지속 불확실 |
-| 일반장 | 단기 | 전일 미국 신호 추종, 1~3일 유효 |
-| 변동폭큰 | 초단기 | 방향 불명확, 오버나이트 리스크 높음 |
-| 하락장 | 초단기 | 반등 포착만, 장중 청산 필수 |
-| 대폭락장 | 초단기 | 현금 기본, 반등 포착 시에만 |
+### 국면별 기본 보유기간
+| 국면 | 기본 기간 |
+|------|---------|
+| 대상승장 | 중기 |
+| 상승장 | 단기 |
+| 일반장 | 단기 |
+| 변동폭큰 | 초단기 |
+| 하락장 | 초단기 |
+| 대폭락장 | 초단기 |
 
-### 청산 우선순위
-1. 손절 (SL) — 즉시
-2. 초단기 시간 청산 (15:20) — 당일 강제
-3. 트레일링 스탑 (중기/장기) — 고점 대비 하락
-4. 최대 보유일 초과
-5. 국면 전환 (PHASE_CHANGE)
-6. 신호 역전 (SIGNAL_EXIT, 초단기/단기만)
+---
+
+## 리스크 관리
+
+설정 파일: `config/risk_config.json`
+
+| 항목 | 값 | 동작 |
+|------|------|------|
+| 일간 손실한도 (DSL) | -3% | 신규 매수 중단 |
+| 주간 손실한도 (WSL) | -5% | 신규 매수 중단 |
+| 연속 손실 | 3회 | 공격 배분 × 0.5 |
+| 회복 모드 | DSL + 상승추세 | 30% 규모 제한 진입 |
+| DCA 분할매수 | 1차 60% / 2차 40% | -1% 하락 시 4시간 내 |
+| 분할익절 | +1.5%: 30%, +3%: 30% | 나머지 트레일링 |
+
+### 포지션 한도 (국면별)
+대상승장 5개 / 상승장 4개 / 일반장 3개 / 변동폭큰 2개 / 하락장·대폭락장 1개
+
+---
+
+## 미국→한국 선행지표 매핑
+
+| 미국 지표 | 한국 반응 섹터 |
+|---------|-------------|
+| 나스닥100 급등 | 지수ETF |
+| SOX 급등 | 반도체, AI/HBM |
+| 엔비디아 급등 | AI/HBM (SK하이닉스) |
+| AMD 급등 | 반도체 |
+| 테슬라 강세 | 2차전지 |
+| WTI 급등 | 정유 |
+| 구리 강세 | 경기회복 전반 |
+| 금 강세 | 안전자산 선호 → AVOID |
+| VIX ≥ 30 | 외국인 매도 예고 → AVOID |
+| 달러 강세 | 외국인 순매도 → AVOID |
+
+---
+
+## 통신 프로토콜
+
+### 표준 메시지 구조 (protocol/protocol.py)
+
+```json
+{
+  "header": {
+    "msg_id": "[에이전트코드]_[날짜]_[시분초]_[순번]",
+    "from": "송신", "to": "수신",
+    "priority": "CRITICAL | HIGH | NORMAL | LOW",
+    "msg_type": "DATA | SIGNAL | ORDER | ERROR | HEARTBEAT | ALERT"
+  },
+  "body": { "data_type": "타입명", "payload": {} },
+  "status": { "code": "OK | ERROR", "message": "" }
+}
+```
+
+### 데이터 흐름
+
+```
+DC → PP: RAW_MARKET_DATA
+PP → MA + IM: PREPROCESSED_DATA (병렬)
+MA + IM → WA: MARKET_ANALYSIS + ISSUE_ANALYSIS
+WA → SR: SIGNAL
+SR → EX: SIGNAL (전략 적용됨)
+EX → DB: ORDER
+```
 
 ---
 
@@ -352,201 +216,75 @@ KOSPI 20일 누적 수익률 + VIX + 10일 실현 변동성 기반 자동 분류
 ### 폴더 구조
 ```
 data/strategy_library/
-├── 대상승구간/   (STR_B1 - SOX +1% 이상)
-├── 상승구간/     (STR_B2 - NASDAQ +1.5% 이상)
-├── 일반구간/     (STR_B3 - NASDAQ +1.5% 이상)
-├── 변동큰구간/   (STR_B4 - SOX +3% 이상)
-├── 하락구간/     (STR_B5 - NVDA +5% 이상)
-└── 대폭락구간/   (STR_B6 - 현금 전략)
-```
-
-### 전략 카드 JSON 구조
-```json
-{
-  "id":          "전략 고유 ID",
-  "group":       "미국지수 | 환율매크로 | 섹터연계 | 시장국면 | 타이밍",
-  "phase":       "적용 국면",
-  "description": "전략 설명",
-  "conditions": {
-    "진입": "진입 조건",
-    "청산": "청산 조건",
-    "제외": "제외 조건"
-  },
-  "performance": {
-    "backtest_win_rate":   0.0,
-    "backtest_return_pct": 0.0,
-    "real_win_rate":       0.0,
-    "real_return_pct":     0.0,
-    "mdd":                 0.0,
-    "status":              "백테스팅중 | 검증완료 | 실전검증완료 | 비활성"
-  },
-  "compatible":   ["호환 전략 ID 목록"],
-  "incompatible": ["비호환 전략 ID 목록"],
-  "created_at":   "생성일",
-  "updated_at":   "수정일"
-}
+├── 대상승구간/    ├── 상승구간/     ├── 일반구간/
+├── 안정화구간/    ├── 변동큰구간/   ├── 급등구간/
+├── 하락구간/      ├── 급락구간/     └── 대폭락구간/
 ```
 
 ### 전략 채택 기준 (과최적화 방지)
-- 3개 이상 다른 기간에서 승률 55% 이상
-- 상승장/하락장/횡보장 모두 테스트 통과
-- 조건 개수 5개 이하 (단순성 유지)
+- 3개 이상 다른 기간에서 승률 58% 이상
+- 평균 수익률 2% 이상
 - MDD -10% 이내
-- Validation 데이터 성과 급락 시 자동 폐기
+- 기간당 최소 5회 거래
+- 일간 백테스트로 자동 검증/폐기
 
 ---
 
 ## 이슈 라이브러리
 
-### 카테고리
 ```
 data/issue_library/
-├── 통화금리/     (Fed금리, 환율급변 등)
-├── 지정학/       (전쟁, 무역분쟁 등)
-├── 경제지표/     (CPI쇼크, 고용급감 등)
-├── 산업섹터/     (반도체공급과잉, AI테마 등)
-├── 시장구조/     (서킷브레이커, 공매도 등)
-└── 블랙스완/     (팬데믹, 금융기관파산 등)
+├── 통화금리/   ├── 지정학/     ├── 경제지표/
+├── 산업섹터/   ├── 시장구조/   └── 블랙스완/
 ```
 
-### 이슈 카드 JSON 구조
-```json
-{
-  "issue_id":   "이슈 고유 ID",
-  "category":   "카테고리",
-  "name":       "이슈명",
-  "발생패턴": {
-    "선행신호": [],
-    "확인신호": []
-  },
-  "시장영향": {
-    "즉각반응":   "당일 예상 등락",
-    "지속기간":   { "평균": 0, "최소": 0, "최대": 0 },
-    "하락폭":     { "평균": 0.0, "최대": 0.0 },
-    "반등패턴":   "패턴 설명",
-    "섹터영향":   { "가장큰피해": [], "상대강세": [] }
-  },
-  "한국특이점": {
-    "외국인반응": "설명",
-    "환율영향":   "설명",
-    "회복속도":   "설명"
-  },
-  "역대사례": [
-    { "날짜": "", "내용": "", "코스피하락": 0.0, "지속일": 0, "회복일": 0 }
-  ],
-  "전략대응": {
-    "D0":     "즉시 대응",
-    "D1_D3":  "초반 대응",
-    "D5_이후": "후반 대응"
-  },
-  "confidence":   0.0,
-  "data_count":   0,
-  "updated_at":   "최근수정일"
-}
-```
-
----
-
-## 미국→한국 선행 지표 매핑
-
-| 미국 지표 | 한국 반응 섹터 |
-|---------|-------------|
-| 나스닥100 급등 | 코스닥 추종 |
-| SOX 급등 | 삼성전자, SK하이닉스, 한미반도체 |
-| 테슬라/리비안 강세 | LG엔솔, 삼성SDI (2차전지) |
-| 엔비디아/AMD 급등 | SK하이닉스 (HBM) |
-| WTI 급등 | SK이노, S-Oil (정유) |
-| 구리 강세 | 경기회복 신호 → 코스피 전반 |
-| 금 강세 | 안전자산 선호 → 위험자산 하락 |
-| VIX 30 돌파 | 외국인 대량 매도 예고 |
-| 달러 강세 | 외국인 순매도 → 코스피 하락 |
-| 리튬/코발트 급등 | LG엔솔 원가 상승 압박 |
+CRITICAL 이슈 발생 시 전체 매매 중단, 기존 포지션 SELL 전환.
 
 ---
 
 ## 데이터베이스 (Supabase)
 
-### 테이블 구조
+### 주요 테이블
 
-```sql
--- 전략 라이브러리
-strategies (
-  id, name, group_name, phase,
-  win_rate, return_pct, mdd,
-  conditions jsonb, status,
-  created_at, updated_at
-)
-
--- 이슈 라이브러리
-issues (
-  id, category, name, severity,
-  duration_avg, affected_sectors jsonb,
-  historical_cases jsonb, confidence,
-  updated_at
-)
-
--- 포지션 (보유 종목)
-positions (
-  id, code, name, quantity, avg_price,
-  buy_order_id, buy_trade_id,
-  phase_at_buy, strategy_id, mode,
-  holding_period,    -- 초단기 | 단기 | 중기 | 장기
-  entry_time,        -- 진입 시각 (ISO8601)
-  max_exit_date,     -- 최대 보유 만기 (ISO8601)
-  peak_price,        -- 트레일링 스탑 기준 고가
-  status,            -- OPEN | CLOSED
-  closed_at, close_reason, result_pct
-)
-
--- 매매 기록
-trades (
-  id, order_id, code, name,
-  action, quantity, price,
-  strategy_id, phase, result_pct,
-  mode, created_at
-)
-
--- 시장 국면 이력
-market_phases (
-  id, phase, confidence,
-  start_date, end_date,
-  issue_id, forecast_accuracy
-)
-
--- 에이전트 로그
-agent_logs (
-  id, agent, level,
-  message, error_code, timestamp
-)
-
--- 백테스팅 결과
-backtest_results (
-  id, strategy_id, phase,
-  period_start, period_end,
-  win_rate, return_pct, mdd,
-  created_at
-)
-```
+| 테이블 | 용도 |
+|--------|------|
+| `positions` | 보유 포지션 (code, quantity, avg_price, holding_period, status, peak_price) |
+| `trades` | 매매 기록 (action, quantity, price, strategy_id, result_pct) |
+| `market_phases` | 국면 이력 (phase, confidence, start_date) |
+| `agent_logs` | 에이전트 로그 |
+| `account_summary` | 계좌 스냅샷 |
+| `market_snapshots` | 시장 데이터 스냅샷 |
+| `backtest_results` | 백테스트 결과 |
+| `pending_dca` | DCA 대기 주문 |
+| `exit_plans` | 청산 계획 |
 
 ---
 
-## Claude API 사용 기준
+## 프론트엔드 (Next.js)
 
-### Sonnet 사용 (기본 - 80~85%)
-- 데이터 수집/전처리 코드
-- API 연결 코드
-- 주문 실행 코드
-- 단위 테스트 코드
-- 단순 버그 수정
-- 설정 파일 작성
+### 페이지 구성
 
-### Opus 사용 (핵심만 - 15~20%)
-- 전체 아키텍처 검토
-- 구간 분류 알고리즘 설계
-- 과최적화 방지 로직 설계
-- 가중치 계산 공식
-- 교착상태 디버깅
-- 전략 성과 분석 및 개선
+| 경로 | 기능 |
+|------|------|
+| `/` | 대시보드 — 국면 게이지, 계좌 요약, 에이전트 상태, 최근 신호 |
+| `/agents` | 7개 에이전트 실시간 상태 모니터링 |
+| `/positions` | 보유/청산 포지션 조회 |
+| `/trades` | 매매내역 + 필터링 |
+| `/account` | KIS 잔고, 체결내역, 투자 분석 (수익곡선, 승률) |
+| `/strategy` | 백테스트 결과, 활성 전략, 청산 계획 |
+| `/settings` | 리스크 한도, 국면별 현금비중 조정 |
+
+### KIS API 프록시
+
+| 엔드포인트 | 기능 |
+|-----------|------|
+| `GET /api/kis/balance` | 계좌 잔고 + 보유종목 |
+| `GET /api/kis/price?code=005930` | 실시간 시세 |
+| `GET /api/kis/trades` | 체결 내역 |
+
+### 데이터 흐름
+Python 백엔드 → Supabase → Next.js (Realtime 구독으로 실시간 반영)
+프론트엔드 → KIS API 직접 호출 (잔고/시세/체결)
 
 ---
 
@@ -554,93 +292,79 @@ backtest_results (
 
 ```
 stock-agent/
-├── CLAUDE.md                    ← 이 파일 (항상 읽기)
-├── main.py                      ← 전체 시스템 시작점
+├── CLAUDE.md                    ← 이 파일
+├── SYSTEM_REPORT.md             ← 상세 시스템 보고서
+├── GIT_WORKFLOW.md              ← Git/배포 가이드
+├── main.py                      ← 시스템 시작점 (4개 모드)
 ├── orchestrator.py              ← 오케스트레이터
 │
 ├── config/
-│   ├── settings.py              ← API 키, 환경 설정
-│   └── strategy_config.json     ← 국면별 전략/가중치 설정
+│   ├── settings.py              ← API 키, 환경 변수 (.env 로더)
+│   ├── strategy_config.json     ← 국면별 가중치, 종목 유니버스, 선행지표
+│   ├── risk_config.json         ← DSL/WSL, DCA, 분할익절 설정
+│   ├── horizon_config.json      ← 4단계 보유기간별 청산 기준
+│   └── stock_classification.json ← 종목 분류 (섹터/테마)
 │
 ├── protocol/
-│   └── protocol.py              ← 표준 메시지 클래스 (모든 에이전트 import)
+│   └── protocol.py              ← 표준 메시지 클래스
 │
 ├── agents/
-│   ├── base_agent.py            ← 공통 베이스 클래스
-│   ├── data_collector.py        ← 데이터수집
-│   ├── preprocessor.py          ← 전처리
-│   ├── market_analyzer.py       ← 시장분석
-│   ├── issue_manager.py         ← 이슈관리
-│   ├── weight_adjuster.py       ← 가중치조정
-│   ├── strategy_researcher.py   ← 전략연구
-│   ├── logic_applier.py         ← 로직적용
-│   ├── executor.py              ← 실행
-│   ├── system_manager.py        ← 시스템관리
-│   └── debugger.py              ← 디버깅 (독립)
+│   ├── base_agent.py            ← 공통 베이스 (timeout, retry, logging)
+│   ├── data_collector.py        ← DC: 데이터수집
+│   ├── preprocessor.py          ← PP: 전처리
+│   ├── market_analyzer.py       ← MA: 시장분석
+│   ├── issue_manager.py         ← IM: 이슈관리
+│   ├── weight_adjuster.py       ← WA: 가중치조정
+│   ├── strategy_researcher.py   ← SR: 전략연구
+│   ├── executor.py              ← EX: 실행
+│   ├── debugger.py              ← DB: 디버깅 (독립)
+│   ├── risk_manager.py          ← 리스크 관리 서비스
+│   ├── position_manager.py      ← 포지션 CRUD 서비스
+│   ├── horizon_manager.py       ← 보유기간 관리 서비스
+│   └── classification_loader.py ← 종목 분류 로더
+│
+├── database/
+│   └── db.py                    ← Supabase 연동 (14개 함수)
 │
 ├── data/
-│   ├── strategy_library/
-│   │   ├── 안정화구간/
-│   │   ├── 급등구간/
-│   │   ├── 급락구간/
-│   │   └── 변동큰구간/
-│   └── issue_library/
-│       ├── 통화금리/
-│       ├── 지정학/
-│       ├── 경제지표/
-│       ├── 산업섹터/
-│       ├── 시장구조/
-│       └── 블랙스완/
+│   ├── strategy_library/        ← 9개 국면별 전략 카드 (JSON)
+│   ├── issue_library/           ← 6개 카테고리 이슈 카드 (JSON)
+│   ├── history/                 ← 히스토리 수집/백테스트 엔진
+│   └── reports/                 ← 전략 리포트 (일간 생성)
 │
-├── tests/                       ← 에이전트별 단위 테스트
-└── logs/                        ← 운영 로그 저장
+├── frontend/
+│   ├── app/                     ← 7개 페이지 + API 라우트
+│   ├── components/              ← UI 컴포넌트
+│   ├── hooks/                   ← 데이터 페칭 훅
+│   ├── lib/                     ← 유틸리티, KIS 클라이언트, 타입
+│   └── providers/               ← Supabase 실시간 구독 프로바이더
+│
+├── tests/                       ← 단위 테스트
+└── logs/                        ← 운영 로그
 ```
 
 ---
 
-## MVP 1단계 목표 (첫 4주)
+## 설정 파일 변경 원칙
 
-모의투자 자동매매가 실제로 돌아가는 것 확인
-
-### 포함 에이전트 (5개)
-1. 데이터수집 (미국 + 한국)
-2. 전처리
-3. 시장분석 (국면감지 단순화)
-4. 가중치조정 (기본 3단계: 상승/횡보/하락)
-5. 실행 (모의투자 주문 + 텔레그램 알림)
-
-### 주차별 목표
-- 1주차: 환경세팅 + API 연결 확인
-- 2주차: 데이터수집 + 전처리 완성 및 테스트
-- 3주차: 시장분석 + 가중치조정 완성
-- 4주차: 실행 연결 → 첫 모의 자동주문 🎉
+- **전략/가중치 변경**: `config/strategy_config.json` 수정 → 코드 변경 불필요
+- **리스크 파라미터 변경**: `config/risk_config.json` 수정
+- **보유기간 기준 변경**: `config/horizon_config.json` 수정
+- **종목 추가/제거**: `config/stock_classification.json` + `strategy_config.json` 수정
+- **코드 변경 시**: `dev` 브랜치에서 작업 → 테스트 → `main` merge
 
 ---
 
-## 개발 원칙 요약
+## 개발 원칙
 
-1. **에이전트 순서**: base_agent.py → 데이터수집 → 전처리 → 분석 → 실행 → 오케스트레이터
-2. **테스트 필수**: 에이전트 하나 완성 → 단독 테스트 통과 → 다음 연결
-3. **표준폼 필수**: 모든 데이터는 protocol.py의 표준폼으로만 통신
-4. **전략 분리**: 비즈니스 로직은 strategy_config.json, 코드는 건드리지 않음
-5. **모의 먼저**: 실전 투자 전 최소 4주 모의투자 검증
-6. **소액 시작**: 모의 안정화 후 실전은 소액부터
-
----
-
-## 운영 비용 구조
-
-| 항목 | 개발 기간 | 실전 운영 후 |
-|------|---------|------------|
-| Claude Max | $100 | $100 |
-| Claude API | $3~5 | $5 |
-| Supabase | 무료 | $25 |
-| 서버 | 내 PC | $15 |
-| KIS API | 무료 | 무료 |
-| yfinance | 무료 | 무료 |
-| **합계** | **~$105** | **~$145** |
+1. **전략 분리**: 비즈니스 로직은 JSON 설정, 코드는 건드리지 않음
+2. **표준폼 필수**: 모든 에이전트 통신은 `protocol.py`의 `StandardMessage` 사용
+3. **Graceful Degradation**: 개별 Step 실패 시 이전 결과로 계속 진행
+4. **모의 먼저**: 실전 전환 전 충분한 모의투자 검증 필수
+5. **dev 브랜치**: 모든 작업은 `dev`에서 → 검증 후 `main` merge
 
 ---
 
 *이 파일은 Claude Code가 프로젝트 시작 시 자동으로 읽습니다.*
 *설계 변경 시 이 파일을 먼저 업데이트하세요.*
+*상세 내용은 `SYSTEM_REPORT.md` 참조.*
