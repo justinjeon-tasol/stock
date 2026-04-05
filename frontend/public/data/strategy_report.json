@@ -1,0 +1,1066 @@
+{
+  "generated_at": "2026-04-02T10:06:07.567816+00:00",
+  "report_version": "2.0",
+  "backtest": {
+    "total_signals": 1830,
+    "unique_stocks": 94,
+    "unique_indicators": 22,
+    "avg_win_rate": 57.7,
+    "avg_return": 0.933,
+    "indicator_ranking": [
+      {
+        "indicator": "robotics",
+        "stocks": 63,
+        "avg_win_rate": 57.9,
+        "avg_return": 0.972,
+        "total_edge": 17130.1,
+        "total_trades": 19257
+      },
+      {
+        "indicator": "defense",
+        "stocks": 50,
+        "avg_win_rate": 58.3,
+        "avg_return": 1.155,
+        "total_edge": 13216.9,
+        "total_trades": 13641
+      },
+      {
+        "indicator": "gold",
+        "stocks": 58,
+        "avg_win_rate": 58.7,
+        "avg_return": 1.1,
+        "total_edge": 10784.4,
+        "total_trades": 11177
+      },
+      {
+        "indicator": "nasdaq_fut",
+        "stocks": 34,
+        "avg_win_rate": 57.9,
+        "avg_return": 1.044,
+        "total_edge": 10324.6,
+        "total_trades": 12065
+      },
+      {
+        "indicator": "dow",
+        "stocks": 44,
+        "avg_win_rate": 58.1,
+        "avg_return": 1.016,
+        "total_edge": 9784.9,
+        "total_trades": 10915
+      },
+      {
+        "indicator": "tech_xlk",
+        "stocks": 33,
+        "avg_win_rate": 57.8,
+        "avg_return": 0.965,
+        "total_edge": 9262.2,
+        "total_trades": 11876
+      },
+      {
+        "indicator": "nasdaq",
+        "stocks": 41,
+        "avg_win_rate": 57.5,
+        "avg_return": 0.913,
+        "total_edge": 8728.2,
+        "total_trades": 11392
+      },
+      {
+        "indicator": "sp500_fut",
+        "stocks": 39,
+        "avg_win_rate": 57.2,
+        "avg_return": 0.907,
+        "total_edge": 8583.2,
+        "total_trades": 10822
+      },
+      {
+        "indicator": "sp500",
+        "stocks": 45,
+        "avg_win_rate": 57.6,
+        "avg_return": 0.957,
+        "total_edge": 7759.8,
+        "total_trades": 9366
+      },
+      {
+        "indicator": "usd_krw",
+        "stocks": 49,
+        "avg_win_rate": 58.1,
+        "avg_return": 1.0,
+        "total_edge": 6534.8,
+        "total_trades": 6929
+      },
+      {
+        "indicator": "battery",
+        "stocks": 18,
+        "avg_win_rate": 57.7,
+        "avg_return": 0.809,
+        "total_edge": 6251.7,
+        "total_trades": 9339
+      },
+      {
+        "indicator": "semi_soxx",
+        "stocks": 16,
+        "avg_win_rate": 57.3,
+        "avg_return": 0.723,
+        "total_edge": 5666.2,
+        "total_trades": 8986
+      },
+      {
+        "indicator": "copper",
+        "stocks": 14,
+        "avg_win_rate": 57.1,
+        "avg_return": 0.843,
+        "total_edge": 4294.1,
+        "total_trades": 6644
+      },
+      {
+        "indicator": "sox",
+        "stocks": 9,
+        "avg_win_rate": 57.2,
+        "avg_return": 0.689,
+        "total_edge": 4177.2,
+        "total_trades": 7122
+      },
+      {
+        "indicator": "clean_energy",
+        "stocks": 19,
+        "avg_win_rate": 56.8,
+        "avg_return": 0.798,
+        "total_edge": 4005.9,
+        "total_trades": 6062
+      },
+      {
+        "indicator": "vix",
+        "stocks": 5,
+        "avg_win_rate": 55.9,
+        "avg_return": 0.603,
+        "total_edge": 3937.2,
+        "total_trades": 8300
+      },
+      {
+        "indicator": "energy_xle",
+        "stocks": 17,
+        "avg_win_rate": 56.7,
+        "avg_return": 0.702,
+        "total_edge": 3742.7,
+        "total_trades": 6240
+      },
+      {
+        "indicator": "nvidia",
+        "stocks": 6,
+        "avg_win_rate": 56.3,
+        "avg_return": 0.457,
+        "total_edge": 3532.1,
+        "total_trades": 9277
+      },
+      {
+        "indicator": "amd",
+        "stocks": 6,
+        "avg_win_rate": 56.4,
+        "avg_return": 0.511,
+        "total_edge": 3368.3,
+        "total_trades": 7486
+      },
+      {
+        "indicator": "wti",
+        "stocks": 5,
+        "avg_win_rate": 56.1,
+        "avg_return": 0.6,
+        "total_edge": 2377.0,
+        "total_trades": 4803
+      },
+      {
+        "indicator": "us_10y",
+        "stocks": 6,
+        "avg_win_rate": 57.1,
+        "avg_return": 0.531,
+        "total_edge": 2095.8,
+        "total_trades": 5143
+      },
+      {
+        "indicator": "tesla",
+        "stocks": 5,
+        "avg_win_rate": 55.9,
+        "avg_return": 0.536,
+        "total_edge": 1736.1,
+        "total_trades": 3964
+      }
+    ],
+    "top_strategies": [
+      {
+        "code": 5930,
+        "name": "삼성전자",
+        "indicator": "semi_soxx",
+        "threshold": 3.0,
+        "direction": "BUY",
+        "win_rate": 59.4,
+        "avg_return": 1.546,
+        "trades": 229,
+        "edge": 353.9
+      },
+      {
+        "code": 64350,
+        "name": "현대로템",
+        "indicator": "robotics",
+        "threshold": 1.5,
+        "direction": "BUY",
+        "win_rate": 55.4,
+        "avg_return": 1.715,
+        "trades": 175,
+        "edge": 300.1
+      },
+      {
+        "code": 52690,
+        "name": "한전기술",
+        "indicator": "nasdaq_fut",
+        "threshold": 2.0,
+        "direction": "BUY",
+        "win_rate": 55.2,
+        "avg_return": 2.17,
+        "trades": 134,
+        "edge": 290.8
+      },
+      {
+        "code": 47810,
+        "name": "한국항공우주",
+        "indicator": "defense",
+        "threshold": -1.5,
+        "direction": "SELL_SIG",
+        "win_rate": 56.1,
+        "avg_return": 1.677,
+        "trades": 171,
+        "edge": 286.9
+      },
+      {
+        "code": 660,
+        "name": "SK하이닉스",
+        "indicator": "semi_soxx",
+        "threshold": 3.0,
+        "direction": "BUY",
+        "win_rate": 56.6,
+        "avg_return": 0.986,
+        "trades": 251,
+        "edge": 247.4
+      },
+      {
+        "code": 880,
+        "name": "한화",
+        "indicator": "defense",
+        "threshold": 2.0,
+        "direction": "BUY",
+        "win_rate": 55.1,
+        "avg_return": 1.435,
+        "trades": 167,
+        "edge": 239.7
+      },
+      {
+        "code": 47050,
+        "name": "포스코인터내셔널",
+        "indicator": "nasdaq",
+        "threshold": 2.0,
+        "direction": "BUY",
+        "win_rate": 56.0,
+        "avg_return": 0.883,
+        "trades": 268,
+        "edge": 236.8
+      },
+      {
+        "code": 88980,
+        "name": "맥쿼리인프라",
+        "indicator": "us_10y",
+        "threshold": 1.0,
+        "direction": "BUY",
+        "win_rate": 58.4,
+        "avg_return": 0.671,
+        "trades": 341,
+        "edge": 228.9
+      },
+      {
+        "code": 6800,
+        "name": "미래에셋증권",
+        "indicator": "clean_energy",
+        "threshold": 3.0,
+        "direction": "BUY",
+        "win_rate": 57.4,
+        "avg_return": 1.739,
+        "trades": 129,
+        "edge": 224.3
+      },
+      {
+        "code": 79550,
+        "name": "LIG넥스원",
+        "indicator": "battery",
+        "threshold": 2.5,
+        "direction": "BUY",
+        "win_rate": 56.4,
+        "avg_return": 1.495,
+        "trades": 149,
+        "edge": 222.8
+      },
+      {
+        "code": 402340,
+        "name": "SK스퀘어",
+        "indicator": "amd",
+        "threshold": -1.0,
+        "direction": "SELL_SIG",
+        "win_rate": 55.7,
+        "avg_return": 1.692,
+        "trades": 131,
+        "edge": 221.7
+      },
+      {
+        "code": 24110,
+        "name": "기업은행",
+        "indicator": "semi_soxx",
+        "threshold": -2.5,
+        "direction": "SELL_SIG",
+        "win_rate": 55.3,
+        "avg_return": 0.632,
+        "trades": 338,
+        "edge": 213.8
+      },
+      {
+        "code": 12450,
+        "name": "한화에어로스페이스",
+        "indicator": "robotics",
+        "threshold": 1.5,
+        "direction": "BUY",
+        "win_rate": 56.3,
+        "avg_return": 0.958,
+        "trades": 222,
+        "edge": 212.7
+      },
+      {
+        "code": 100,
+        "name": "유한양행",
+        "indicator": "dow",
+        "threshold": -2.0,
+        "direction": "SELL_SIG",
+        "win_rate": 58.2,
+        "avg_return": 1.494,
+        "trades": 141,
+        "edge": 210.7
+      },
+      {
+        "code": 138040,
+        "name": "메리츠금융지주",
+        "indicator": "clean_energy",
+        "threshold": 2.0,
+        "direction": "BUY",
+        "win_rate": 55.5,
+        "avg_return": 1.214,
+        "trades": 173,
+        "edge": 209.9
+      },
+      {
+        "code": 34020,
+        "name": "두산에너빌리티",
+        "indicator": "defense",
+        "threshold": 2.5,
+        "direction": "BUY",
+        "win_rate": 57.7,
+        "avg_return": 1.839,
+        "trades": 111,
+        "edge": 204.2
+      },
+      {
+        "code": 720,
+        "name": "현대건설",
+        "indicator": "robotics",
+        "threshold": 2.0,
+        "direction": "BUY",
+        "win_rate": 57.6,
+        "avg_return": 2.379,
+        "trades": 85,
+        "edge": 202.2
+      },
+      {
+        "code": 3850,
+        "name": "보령",
+        "indicator": "battery",
+        "threshold": 3.0,
+        "direction": "BUY",
+        "win_rate": 59.2,
+        "avg_return": 1.678,
+        "trades": 120,
+        "edge": 201.3
+      },
+      {
+        "code": 28050,
+        "name": "삼성엔지니어링",
+        "indicator": "energy_xle",
+        "threshold": -3.0,
+        "direction": "SELL_SIG",
+        "win_rate": 55.5,
+        "avg_return": 1.051,
+        "trades": 191,
+        "edge": 200.7
+      },
+      {
+        "code": 33780,
+        "name": "KT&G",
+        "indicator": "semi_soxx",
+        "threshold": -2.5,
+        "direction": "SELL_SIG",
+        "win_rate": 56.4,
+        "avg_return": 0.617,
+        "trades": 323,
+        "edge": 199.2
+      },
+      {
+        "code": 5380,
+        "name": "현대차",
+        "indicator": "robotics",
+        "threshold": 1.5,
+        "direction": "BUY",
+        "win_rate": 56.5,
+        "avg_return": 1.02,
+        "trades": 193,
+        "edge": 196.9
+      },
+      {
+        "code": 241560,
+        "name": "두산밥캣",
+        "indicator": "robotics",
+        "threshold": 1.0,
+        "direction": "BUY",
+        "win_rate": 55.0,
+        "avg_return": 0.695,
+        "trades": 280,
+        "edge": 194.6
+      },
+      {
+        "code": 42700,
+        "name": "한미반도체",
+        "indicator": "usd_krw",
+        "threshold": -2.0,
+        "direction": "SELL_SIG",
+        "win_rate": 55.4,
+        "avg_return": 2.587,
+        "trades": 74,
+        "edge": 191.4
+      },
+      {
+        "code": 11790,
+        "name": "SKC",
+        "indicator": "nasdaq_fut",
+        "threshold": 2.5,
+        "direction": "BUY",
+        "win_rate": 55.7,
+        "avg_return": 0.914,
+        "trades": 201,
+        "edge": 183.8
+      },
+      {
+        "code": 2790,
+        "name": "아모레G",
+        "indicator": "usd_krw",
+        "threshold": -1.0,
+        "direction": "SELL_SIG",
+        "win_rate": 55.7,
+        "avg_return": 0.614,
+        "trades": 291,
+        "edge": 178.6
+      },
+      {
+        "code": 267250,
+        "name": "현대중공업",
+        "indicator": "clean_energy",
+        "threshold": -1.5,
+        "direction": "SELL_SIG",
+        "win_rate": 55.1,
+        "avg_return": 1.312,
+        "trades": 136,
+        "edge": 178.4
+      },
+      {
+        "code": 69500,
+        "name": "KODEX 200",
+        "indicator": "nasdaq",
+        "threshold": 1.0,
+        "direction": "BUY",
+        "win_rate": 60.1,
+        "avg_return": 0.472,
+        "trades": 368,
+        "edge": 173.6
+      },
+      {
+        "code": 112610,
+        "name": "씨에스윈드",
+        "indicator": "robotics",
+        "threshold": 2.0,
+        "direction": "BUY",
+        "win_rate": 56.1,
+        "avg_return": 1.714,
+        "trades": 98,
+        "edge": 168.0
+      },
+      {
+        "code": 316140,
+        "name": "우리금융지주",
+        "indicator": "vix",
+        "threshold": 2.0,
+        "direction": "BUY",
+        "win_rate": 55.1,
+        "avg_return": 1.071,
+        "trades": 156,
+        "edge": 167.0
+      },
+      {
+        "code": 6400,
+        "name": "삼성SDI",
+        "indicator": "dow",
+        "threshold": 2.0,
+        "direction": "BUY",
+        "win_rate": 58.2,
+        "avg_return": 1.056,
+        "trades": 158,
+        "edge": 166.8
+      }
+    ]
+  },
+  "correlation": {
+    "top_leading_indicators": [
+      {
+        "indicator": "robotics",
+        "category": "sector_etf",
+        "lag_0": 0.251,
+        "lag_1": 0.364,
+        "observations": 2954
+      },
+      {
+        "indicator": "semi_soxx",
+        "category": "sector_etf",
+        "lag_0": 0.182,
+        "lag_1": 0.34,
+        "observations": 5899
+      },
+      {
+        "indicator": "tech_xlk",
+        "category": "sector_etf",
+        "lag_0": 0.154,
+        "lag_1": 0.337,
+        "observations": 6505
+      },
+      {
+        "indicator": "sp500_fut",
+        "category": "futures",
+        "lag_0": 0.2,
+        "lag_1": 0.332,
+        "observations": 6121
+      },
+      {
+        "indicator": "nasdaq_fut",
+        "category": "futures",
+        "lag_0": 0.178,
+        "lag_1": 0.33,
+        "observations": 6121
+      },
+      {
+        "indicator": "defense",
+        "category": "sector_etf",
+        "lag_0": 0.194,
+        "lag_1": 0.327,
+        "observations": 4751
+      },
+      {
+        "indicator": "nasdaq",
+        "category": "us_index",
+        "lag_0": 0.148,
+        "lag_1": 0.326,
+        "observations": 6989
+      },
+      {
+        "indicator": "clean_energy",
+        "category": "sector_etf",
+        "lag_0": 0.228,
+        "lag_1": 0.325,
+        "observations": 4242
+      },
+      {
+        "indicator": "industrial_xli",
+        "category": "sector_etf",
+        "lag_0": 0.177,
+        "lag_1": 0.323,
+        "observations": 6505
+      },
+      {
+        "indicator": "dow_fut",
+        "category": "futures",
+        "lag_0": 0.203,
+        "lag_1": 0.322,
+        "observations": 5734
+      },
+      {
+        "indicator": "russell2000",
+        "category": "us_index",
+        "lag_0": 0.141,
+        "lag_1": 0.32,
+        "observations": 6989
+      },
+      {
+        "indicator": "consumer_xly",
+        "category": "sector_etf",
+        "lag_0": 0.145,
+        "lag_1": 0.319,
+        "observations": 6505
+      },
+      {
+        "indicator": "sp500",
+        "category": "us_index",
+        "lag_0": 0.148,
+        "lag_1": 0.317,
+        "observations": 6989
+      },
+      {
+        "indicator": "sox",
+        "category": "us_index",
+        "lag_0": 0.128,
+        "lag_1": 0.315,
+        "observations": 6989
+      },
+      {
+        "indicator": "battery",
+        "category": "sector_etf",
+        "lag_0": 0.264,
+        "lag_1": 0.313,
+        "observations": 3733
+      }
+    ],
+    "vix_regime": [
+      {
+        "vix_range": "VIX<15 안정",
+        "days": 1990,
+        "mean_ret": 0.101,
+        "median_ret": 0.089,
+        "std_ret": 0.857,
+        "win_rate": 56.4,
+        "max_gain": 5.66,
+        "max_loss": -3.17
+      },
+      {
+        "vix_range": "VIX 15-20 보통",
+        "days": 1993,
+        "mean_ret": 0.111,
+        "median_ret": 0.087,
+        "std_ret": 1.271,
+        "win_rate": 54.1,
+        "max_gain": 10.54,
+        "max_loss": -5.77
+      },
+      {
+        "vix_range": "VIX 20-25 경계",
+        "days": 1572,
+        "mean_ret": 0.045,
+        "median_ret": 0.044,
+        "std_ret": 1.982,
+        "win_rate": 51.2,
+        "max_gain": 10.33,
+        "max_loss": -12.06
+      },
+      {
+        "vix_range": "VIX 25-30 불안",
+        "days": 765,
+        "mean_ret": -0.067,
+        "median_ret": 0.057,
+        "std_ret": 2.225,
+        "win_rate": 51.8,
+        "max_gain": 10.19,
+        "max_loss": -11.63
+      },
+      {
+        "vix_range": "VIX 30-40 공포",
+        "days": 471,
+        "mean_ret": -0.181,
+        "median_ret": -0.099,
+        "std_ret": 2.213,
+        "win_rate": 48.2,
+        "max_gain": 8.68,
+        "max_loss": -8.77
+      },
+      {
+        "vix_range": "VIX>40 패닉",
+        "days": 198,
+        "mean_ret": -0.375,
+        "median_ret": -0.251,
+        "std_ret": 3.26,
+        "win_rate": 44.9,
+        "max_gain": 11.95,
+        "max_loss": -10.57
+      }
+    ],
+    "stock_us_correlation": [
+      {
+        "kr_stock": "samsung",
+        "us_indicator": "sox",
+        "lag_1": 0.365,
+        "observations": 6349
+      },
+      {
+        "kr_stock": "lg_energy",
+        "us_indicator": "battery",
+        "lag_1": 0.274,
+        "observations": 982
+      },
+      {
+        "kr_stock": "posco",
+        "us_indicator": "defense",
+        "lag_1": 0.26,
+        "observations": 4762
+      },
+      {
+        "kr_stock": "sk_inno",
+        "us_indicator": "energy_xle",
+        "lag_1": 0.243,
+        "observations": 4468
+      },
+      {
+        "kr_stock": "hanmi_semi",
+        "us_indicator": "sox",
+        "lag_1": 0.217,
+        "observations": 4954
+      },
+      {
+        "kr_stock": "samsung_sdi",
+        "us_indicator": "sox",
+        "lag_1": 0.214,
+        "observations": 6349
+      },
+      {
+        "kr_stock": "s_oil",
+        "us_indicator": "energy_xle",
+        "lag_1": 0.212,
+        "observations": 6349
+      },
+      {
+        "kr_stock": "sk_hynix",
+        "us_indicator": "sox",
+        "lag_1": 0.198,
+        "observations": 6349
+      },
+      {
+        "kr_stock": "naver",
+        "us_indicator": "nasdaq",
+        "lag_1": 0.196,
+        "observations": 5642
+      },
+      {
+        "kr_stock": "hyundai",
+        "us_indicator": "semi_soxx",
+        "lag_1": 0.184,
+        "observations": 5965
+      },
+      {
+        "kr_stock": "hanhwa_aero",
+        "us_indicator": "defense",
+        "lag_1": 0.165,
+        "observations": 4762
+      },
+      {
+        "kr_stock": "celltrion",
+        "us_indicator": "nasdaq",
+        "lag_1": 0.103,
+        "observations": 4958
+      }
+    ]
+  },
+  "live_performance": {
+    "period_days": 7,
+    "trade_count": 46,
+    "buy_count": 26,
+    "sell_count": 20,
+    "win_rate": 11.1,
+    "total_pnl_pct": -9.17,
+    "avg_pnl_pct": -0.51,
+    "strategy_performance": [
+      {
+        "strategy_id": "STR_B2",
+        "trades": 18,
+        "win_rate": 11.1,
+        "total_pnl": -9.17
+      }
+    ]
+  },
+  "active_strategies": [
+    {
+      "id": "STR_B1",
+      "phase": "대상승장",
+      "group": "데이터기반",
+      "status": "검증완료",
+      "win_rate": 68.8,
+      "return_pct": 1.262,
+      "mdd": -5.5,
+      "trade_count": 16,
+      "holding_period": "중기"
+    },
+    {
+      "id": "STR_B5",
+      "phase": "하락장",
+      "group": "데이터기반",
+      "status": "검증완료",
+      "win_rate": 61.5,
+      "return_pct": 0.646,
+      "mdd": -4.4,
+      "trade_count": 13,
+      "holding_period": "초단기"
+    },
+    {
+      "id": "STR_006",
+      "phase": "하락장",
+      "group": "시장국면",
+      "status": "백테스팅중",
+      "win_rate": 57.1,
+      "return_pct": 1.285,
+      "mdd": -4.9,
+      "trade_count": 7,
+      "holding_period": "초단기"
+    },
+    {
+      "id": "STR_007",
+      "phase": "변동폭큰",
+      "group": "시장국면",
+      "status": "백테스팅중",
+      "win_rate": 53.8,
+      "return_pct": 0.699,
+      "mdd": -12.1,
+      "trade_count": 26,
+      "holding_period": "초단기"
+    },
+    {
+      "id": "STR_002",
+      "phase": "일반장",
+      "group": "섹터연계",
+      "status": "백테스팅중",
+      "win_rate": 53.3,
+      "return_pct": 0.835,
+      "mdd": -14.8,
+      "trade_count": 45,
+      "holding_period": "단기"
+    },
+    {
+      "id": "STR_B3",
+      "phase": "일반장",
+      "group": "데이터기반",
+      "status": "검증완료",
+      "win_rate": 52.4,
+      "return_pct": -0.008,
+      "mdd": -7.8,
+      "trade_count": 21,
+      "holding_period": "단기"
+    },
+    {
+      "id": "STR_001",
+      "phase": "일반장",
+      "group": "미국지수",
+      "status": "백테스팅중",
+      "win_rate": 48.8,
+      "return_pct": 0.152,
+      "mdd": -13.9,
+      "trade_count": 41,
+      "holding_period": "단기"
+    },
+    {
+      "id": "STR_005",
+      "phase": "하락장",
+      "group": "시장국면",
+      "status": "백테스팅중",
+      "win_rate": 45.0,
+      "return_pct": 0.135,
+      "mdd": -10.9,
+      "trade_count": 20,
+      "holding_period": "초단기"
+    },
+    {
+      "id": "STR_004",
+      "phase": "대상승장",
+      "group": "섹터연계",
+      "status": "백테스팅중",
+      "win_rate": 44.1,
+      "return_pct": 0.883,
+      "mdd": -25.7,
+      "trade_count": 102,
+      "holding_period": "단기"
+    },
+    {
+      "id": "STR_003",
+      "phase": "대상승장",
+      "group": "시장국면",
+      "status": "백테스팅중",
+      "win_rate": 40.5,
+      "return_pct": 0.177,
+      "mdd": -20.6,
+      "trade_count": 42,
+      "holding_period": "중기"
+    },
+    {
+      "id": "STR_B4",
+      "phase": "변동폭큰",
+      "group": "데이터기반",
+      "status": "백테스팅중",
+      "win_rate": 38.5,
+      "return_pct": -0.346,
+      "mdd": -7.5,
+      "trade_count": 13,
+      "holding_period": "초단기"
+    },
+    {
+      "id": "STR_B2",
+      "phase": "상승장",
+      "group": "데이터기반",
+      "status": "백테스팅중",
+      "win_rate": 35.7,
+      "return_pct": -0.43,
+      "mdd": -10.7,
+      "trade_count": 14,
+      "holding_period": "단기"
+    },
+    {
+      "id": "STR_B6_반등",
+      "phase": "대폭락장",
+      "group": "데이터기반",
+      "status": "백테스팅중",
+      "win_rate": 0.0,
+      "return_pct": 0.0,
+      "mdd": 0.0,
+      "trade_count": 0,
+      "holding_period": "초단기"
+    },
+    {
+      "id": "STR_B6",
+      "phase": "대폭락장",
+      "group": "데이터기반",
+      "status": "백테스팅중",
+      "win_rate": 0.0,
+      "return_pct": 0.0,
+      "mdd": 0.0,
+      "trade_count": 0,
+      "holding_period": "초단기"
+    }
+  ],
+  "exit_plans": [
+    {
+      "code": "006400",
+      "name": "삼성SDI",
+      "trend": "LOSS_ZONE",
+      "target_1w": 428631,
+      "target_1m": 422306,
+      "confidence": 0.6,
+      "avg_price": 442375.2,
+      "current_price": 421000,
+      "pnl_pct": -4.8,
+      "quantity": 123,
+      "holding_period": "단기",
+      "stages": [
+        {
+          "stage": 1,
+          "type": "FINAL_TP",
+          "trigger_price": 433528,
+          "trigger_vs_avg": -2.0,
+          "sell_ratio": 1.0,
+          "status": "PENDING",
+          "rationale": "손실 최소화 탈출 (매입 대비 -2.0%)"
+        }
+      ],
+      "stage_count": 1,
+      "sl_price": 438394,
+      "sl_pct": -0.9,
+      "upside_p75": null,
+      "upside_p90": null
+    },
+    {
+      "code": "010950",
+      "name": "S-Oil",
+      "trend": "PROFIT_FLAT",
+      "target_1w": 111461,
+      "target_1m": 111520,
+      "confidence": 0.6,
+      "avg_price": 106303.39,
+      "current_price": 112300,
+      "pnl_pct": 5.6,
+      "quantity": 84,
+      "holding_period": "단기",
+      "stages": [
+        {
+          "stage": 1,
+          "type": "PARTIAL_TP",
+          "trigger_price": 112525,
+          "trigger_vs_avg": 5.9,
+          "sell_ratio": 0.5,
+          "status": "PENDING",
+          "rationale": "수익 확정 (5.9%)"
+        },
+        {
+          "stage": 2,
+          "type": "FINAL_TP",
+          "trigger_price": 107898,
+          "trigger_vs_avg": 1.5,
+          "sell_ratio": 1.0,
+          "status": "PENDING",
+          "rationale": "잔량 확정 (1.5%)"
+        }
+      ],
+      "stage_count": 2,
+      "sl_price": 104868,
+      "sl_pct": -1.35,
+      "upside_p75": null,
+      "upside_p90": null
+    },
+    {
+      "code": "096770",
+      "name": "SK이노베이션",
+      "trend": "LOSS_ZONE",
+      "target_1w": 111461,
+      "target_1m": 111520,
+      "confidence": 0.6,
+      "avg_price": 115600.26,
+      "current_price": 112300,
+      "pnl_pct": -2.9,
+      "quantity": 245,
+      "holding_period": "단기",
+      "stages": [
+        {
+          "stage": 1,
+          "type": "FINAL_TP",
+          "trigger_price": 113423,
+          "trigger_vs_avg": -1.9,
+          "sell_ratio": 1.0,
+          "status": "PENDING",
+          "rationale": "손실 최소화 탈출 (매입 대비 -1.9%)"
+        }
+      ],
+      "stage_count": 1,
+      "sl_price": 114560,
+      "sl_pct": -0.9,
+      "upside_p75": null,
+      "upside_p90": null
+    },
+    {
+      "code": "373220",
+      "name": "LG에너지솔루션",
+      "trend": "LOSS_ZONE",
+      "target_1w": 400214,
+      "target_1m": 398763,
+      "confidence": 0.6,
+      "avg_price": 407485.0,
+      "current_price": 398500,
+      "pnl_pct": -2.2,
+      "quantity": 61,
+      "holding_period": "단기",
+      "stages": [
+        {
+          "stage": 1,
+          "type": "FINAL_TP",
+          "trigger_price": 402485,
+          "trigger_vs_avg": -1.2,
+          "sell_ratio": 1.0,
+          "status": "PENDING",
+          "rationale": "손실 최소화 탈출 (매입 대비 -1.2%)"
+        }
+      ],
+      "stage_count": 1,
+      "sl_price": 403818,
+      "sl_pct": -0.9,
+      "upside_p75": null,
+      "upside_p90": null
+    }
+  ]
+}
