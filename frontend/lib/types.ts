@@ -47,6 +47,12 @@ export interface MarketPhase {
   created_at?: string
 }
 
+// 시그널 출처 타입
+export type SignalSource = 'backtest_signal' | 'sector_fallback'
+
+// 시그널 신뢰도 타입
+export type SignalConfidence = '★★★' | '★★' | '★'
+
 // positions 테이블
 export interface Position {
   id: string
@@ -67,6 +73,9 @@ export interface Position {
   closed_at: string | null
   close_reason: string | null
   result_pct: number | null
+  signal_source: SignalSource | null
+  signal_confidence: SignalConfidence | null
+  signal_trigger: string | null
   created_at?: string
 }
 
@@ -83,6 +92,11 @@ export interface Trade {
   phase: MarketPhaseType | null
   result_pct: number | null
   mode: TradeMode
+  signal_source: SignalSource | null
+  signal_confidence: SignalConfidence | null
+  signal_trigger: string | null
+  backtest_win_rate: number | null
+  backtest_expected_return: number | null
   created_at: string
 }
 

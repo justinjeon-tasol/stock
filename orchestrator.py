@@ -197,6 +197,30 @@ class Orchestrator:
             self._logger.warning("[2-b] 포지션 기간 재평가 실패 (무시): %s", exc)
 
         # -----------------------------------------------------------------
+        # Step 2-b2: 시그널 역전 체크 (보유 포지션의 매수 트리거 역전 감지)
+        # -----------------------------------------------------------------
+        try:
+            ma_payload_2b2 = step3_result.body.get("payload", {})
+            active_signals_2b2 = ma_payload_2b2.get("active_signals", [])
+            if active_signals_2b2:
+                from services.signal_service import SignalService
+                open_positions_2b2 = get_open_positions()
+                reversal_candidates = self._check_signal_reversals(
+                    open_positions_2b2, active_signals_2b2
+                )
+                if reversal_candidates:
+                    self._logger.warning(
+                        "[2-b2] 시그널 역전 감지: %d건 (%s)",
+                        len(reversal_candidates),
+                        ", ".join(f"{c['name']}({c['reason']})" for c in reversal_candidates),
+                    )
+                    # sell_targets에 주입하기 위해 step3_result payload에 추가
+                    existing_sell = ma_payload_2b2.get("signal_reversal_sells", [])
+                    ma_payload_2b2["signal_reversal_sells"] = existing_sell + reversal_candidates
+        except Exception as exc:
+            self._logger.warning("[2-b2] 시그널 역전 체크 실패 (무시): %s", exc)
+
+        # -----------------------------------------------------------------
         # Step 2-c: exit_plan 생성/갱신 (forecast 기반 매도 계획)
         # -----------------------------------------------------------------
         try:
@@ -596,6 +620,63 @@ class Orchestrator:
         if self._debug_task and not self._debug_task.done():
             self._debug_task.cancel()
             self._logger.info("[디버깅] 백그라운드 감시 종료")
+
+    # ------------------------------------------------------------------
+    # 시그널 역전 체크
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _check_signal_reversals(
+        open_positions: list,
+        active_signals: list,
+    ) -> list:
+        """
+        보유 중인 포지션의 매수 트리거가 역전되었는지 확인한다.
+
+        예: SOX 급등으로 SK하이��스 매수(signal_trigger="sox_up") 후
+            이번 실행에서 SOX 급락(sox_crash) 감지 → 청산 후보
+
+        Returns: [{"code", "name", "position_id", "avg_price", "quantity",
+                   "sell_reason", "holding_period", "reason"}, ...]
+        """
+        from services.signal_service import SignalService
+
+        # active_signals에서 indicator별 방향 수집
+        current_directions: dict = {}  # {indicator_id: set(event_direction)}
+        for sig in active_signals:
+            signal_id = sig.get("signal_id", "")
+            parsed = SignalService.parse_signal_id(signal_id)
+            if parsed:
+                ind_id, evt_dir = parsed
+                current_directions.setdefault(ind_id, set()).add(evt_dir)
+
+        exit_candidates = []
+        for pos in open_positions:
+            trigger = pos.get("signal_trigger", "")
+            if not trigger or "_" not in trigger:
+                continue
+
+            parts = trigger.split("_", 1)
+            if len(parts) != 2:
+                continue
+            indicator_id, original_dir = parts
+
+            # 반대 방향 확인
+            opposite = "down" if original_dir == "up" else "up"
+            dirs = current_directions.get(indicator_id, set())
+            if opposite in dirs:
+                exit_candidates.append({
+                    "code": pos.get("code", ""),
+                    "name": pos.get("name", ""),
+                    "position_id": pos.get("id", ""),
+                    "avg_price": float(pos.get("avg_price", 0)),
+                    "quantity": int(pos.get("quantity", 0)),
+                    "sell_reason": "SIGNAL_REVERSAL",
+                    "holding_period": pos.get("holding_period", ""),
+                    "reason": f"{indicator_id} 방향 역전: {original_dir} → {opposite}",
+                })
+
+        return exit_candidates
 
     # ------------------------------------------------------------------
     # 로깅 헬퍼

@@ -6,6 +6,7 @@ MVP: Executor(EX)로 직행.
 """
 
 import json
+import logging
 import os
 from typing import Optional
 
@@ -14,6 +15,7 @@ from agents.classification_loader import ClassificationLoader
 from agents.position_manager import PositionManager
 from agents.risk_manager import RiskManager
 from protocol.protocol import StandardMessage, dataclass_to_dict
+from services.signal_service import SignalService
 
 
 # 하드코딩 fallback 가중치 (strategy_config.json 로드 실패 시 사용)
@@ -88,6 +90,7 @@ class WeightAdjuster(BaseAgent):
         self._classification = ClassificationLoader(_CLASSIFICATION_PATH)
         self._position_manager = PositionManager()
         self._risk_manager = RiskManager()
+        self._signal_service = SignalService()
 
     # ------------------------------------------------------------------
     # 설정 로드
@@ -234,6 +237,16 @@ class WeightAdjuster(BaseAgent):
                     existing_codes.add(rt["code"])
             if reduce_targets:
                 self.log("warning", f"포지션 축소({reduce_pct}%): {len(reduce_targets)}종목")
+
+        # ── 시그널 역전 매도 대상 합류 (Orchestrator Step 2-b2에서 주입) ─��
+        reversal_sells = payload.get("signal_reversal_sells", [])
+        if reversal_sells:
+            existing_sell_codes = {t["code"] for t in sell_targets}
+            for rs in reversal_sells:
+                if rs["code"] not in existing_sell_codes:
+                    sell_targets.append(rs)
+                    existing_sell_codes.add(rs["code"])
+            self.log("info", f"시그널 역전 매도: {len(reversal_sells)}종목 추가")
 
         # issue_factor: 활성 이슈 요약 (없으면 None)
         issue_factor = None
@@ -442,6 +455,35 @@ class WeightAdjuster(BaseAgent):
             if sig.get("direction") == "AVOID":
                 for sector in sig.get("kr_sectors", []):
                     avoid_sectors.add(sector)
+
+        # ── 백테스팅 시그널 매트릭스 기반 종목 선정 (우선) ──────────────
+        signal_candidates = self._get_signal_service_candidates(
+            active_signals, avoid_sectors, aggressive_pct
+        )
+        if signal_candidates:
+            self.log("info", f"시그널 매트릭스 기반 종목 {len(signal_candidates)}개 선정")
+            # 시그널 기반 후보를 기존 파이프라인(Step 8: 보유 중 제외 ~ 정규화)에 합류
+            candidates = signal_candidates
+            # Step 8 이후로 직접 점프 (테마/RS/외국인 부스트는 이미 백테스팅에서 반영됨)
+            candidates = [
+                c for c in candidates
+                if not self._position_manager.is_already_held(c["code"])
+            ]
+            max_targets = self._risk_manager.get_max_positions(phase) if phase else _MAX_TARGETS
+            current_positions = len(self._position_manager.get_open_positions())
+            available_slots = max(0, max_targets - current_positions)
+            candidates.sort(key=lambda x: x["weight"], reverse=True)
+            candidates = candidates[:available_slots]
+
+            total_weight = sum(c["weight"] for c in candidates)
+            if total_weight > aggressive_pct and total_weight > 0:
+                scale = aggressive_pct / total_weight
+                for c in candidates:
+                    c["weight"] = round(c["weight"] * scale, 4)
+
+            return candidates
+
+        # ── 폴백: 기존 섹터 매핑 기반 종목 선정 ──────────────────────────
 
         # BUY 신호에서 (섹터, 강도) 매핑 구축 — 같은 섹터가 여러 신호에 있으면 강도 누적
         sector_strength: dict = {}
@@ -1586,6 +1628,133 @@ class WeightAdjuster(BaseAgent):
                 "sell_reason": "REDUCE_POSITION",
             })
         return targets
+
+    # ------------------------------------------------------------------
+    # 백테스팅 시그널 매트릭스 기반 종목 선정
+    # ------------------------------------------------------------------
+
+    def _get_signal_service_candidates(
+        self,
+        active_signals: list,
+        avoid_sectors: set,
+        aggressive_pct: float,
+    ) -> list:
+        """
+        SignalService에서 종목별 시그널을 조회하여 candidates 리스트를 구성한다.
+        시그널이 없거나 SignalService 장애 시 빈 리스트를 반환 (기존 섹터 매핑 폴백 유도).
+
+        반환 형식은 기존 candidates와 동일 + 시그널 메타 필드:
+        [{"code", "name", "weight", "sector",
+          "signal_source", "signal_confidence", "signal_trigger",
+          "size_factor", "win_rate", "expected_return"}, ...]
+        """
+        try:
+            buy_signals = [s for s in active_signals if s.get("direction") == "BUY"]
+            if not buy_signals:
+                return []
+
+            all_candidates: list = []
+            seen_codes: set = set()
+
+            for sig in buy_signals:
+                signal_id = sig.get("signal_id", "")
+                parsed = SignalService.parse_signal_id(signal_id)
+                if parsed is None:
+                    continue
+
+                indicator_id, event_direction = parsed
+                stock_signals = self._signal_service.get_signals_by_indicator(
+                    indicator_id=indicator_id,
+                    direction=event_direction,
+                    min_confidence="★★",
+                )
+
+                trigger_key = f"{indicator_id}_{event_direction}"
+                for s in stock_signals:
+                    code = s["stock_code"]
+                    sector = s.get("sector", "")
+
+                    # AVOID 섹터 필터
+                    if sector in avoid_sectors:
+                        continue
+
+                    # 진입 불가 신뢰도 필터
+                    if s["position_size_factor"] <= 0:
+                        continue
+
+                    if code in seen_codes:
+                        # 중복 종목은 더 높은 size_factor 사용
+                        for c in all_candidates:
+                            if c["code"] == code:
+                                if s["position_size_factor"] > c.get("size_factor", 0):
+                                    c["size_factor"] = s["position_size_factor"]
+                                    c["signal_confidence"] = s["confidence"]
+                                    c["signal_trigger"] = trigger_key
+                                break
+                        continue
+
+                    seen_codes.add(code)
+
+                    # weight = aggressive_pct를 종목 수로 나눈 후 size_factor 적용
+                    # (나중에 정규화하므로 여기서는 size_factor를 raw weight로 사용)
+                    raw_weight = aggressive_pct * s["position_size_factor"]
+
+                    all_candidates.append({
+                        "code": code,
+                        "name": s["stock_name"],
+                        "weight": round(raw_weight, 4),
+                        "sector": sector,
+                        "signal_source": "backtest_signal",
+                        "signal_confidence": s["confidence"],
+                        "signal_trigger": trigger_key,
+                        "size_factor": s["position_size_factor"],
+                        "win_rate": s["win_rate"],
+                        "expected_return": s["mean_excess_return"],
+                    })
+
+            if not all_candidates:
+                return []
+
+            # 충돌 시그널 제거: 같은 종목에 buy와 sell이 동시에 있으면 스킵
+            all_candidates = self._resolve_signal_conflicts(all_candidates, active_signals)
+
+            return all_candidates
+
+        except Exception as exc:
+            self.log("warning", f"시그널 매트릭스 조회 실패 (폴백): {exc}")
+            return []
+
+    def _resolve_signal_conflicts(self, candidates: list, active_signals: list) -> list:
+        """같은 종목에 buy와 sell 시그널이 동시에 있으면 제거."""
+        # SELL 신호가 있는 종목코드 수집
+        sell_codes: set = set()
+        sell_signals = [s for s in active_signals if s.get("direction") == "SELL"]
+        for sig in sell_signals:
+            signal_id = sig.get("signal_id", "")
+            parsed = SignalService.parse_signal_id(signal_id)
+            if parsed is None:
+                continue
+            indicator_id, event_direction = parsed
+            sell_stock_signals = self._signal_service.get_signals_by_indicator(
+                indicator_id=indicator_id,
+                direction=event_direction,
+                min_confidence="★★",
+            )
+            for s in sell_stock_signals:
+                if s["signal_direction"] == "sell":
+                    sell_codes.add(s["stock_code"])
+
+        if not sell_codes:
+            return candidates
+
+        resolved = []
+        for c in candidates:
+            if c["code"] in sell_codes:
+                self.log("warning",
+                         f"시그널 충돌: {c['name']}({c['code']}) — buy/sell 동시 발생, 스킵")
+                continue
+            resolved.append(c)
+        return resolved
 
     # ------------------------------------------------------------------
     # reason 텍스트 생성

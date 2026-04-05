@@ -151,6 +151,7 @@ class StrategyEngine(BaseAgent):
                 self.log("warning", f"전략 제외 조건 발동: {exclude_reason} → HOLD 전환")
             else:
                 targets = self._prioritize_targets(targets, strategy)
+                targets = self._apply_size_factor(targets)
 
         refined = dict(payload)
         refined["direction"]      = direction
@@ -227,6 +228,33 @@ class StrategyEngine(BaseAgent):
             f"수익률={perf.get('backtest_return_pct', 0):+.1f}%"
         )
         return original + addon
+
+    def _apply_size_factor(self, targets: list) -> list:
+        """
+        각 target의 signal_source에 따라 weight에 size_factor를 곱한다.
+        backtest_signal: size_factor(1.0 또는 0.5) 적용
+        sector_fallback(또는 source 없음): 0.3 팩터 적용
+        """
+        if not targets:
+            return targets
+
+        adjusted = []
+        for t in targets:
+            source = t.get("signal_source", "")
+            size_factor = t.get("size_factor")
+            if size_factor is not None:
+                # 이미 WA에서 size_factor가 weight에 반영되어 있으므로
+                # 추가 조정 없이 그대로 통과
+                adjusted.append(t)
+            elif source == "sector_fallback":
+                # 폴백 종목: weight를 30%로 축소
+                new_t = dict(t)
+                new_t["weight"] = round(t.get("weight", 0) * 0.3, 4)
+                new_t["size_factor"] = 0.3
+                adjusted.append(new_t)
+            else:
+                adjusted.append(t)
+        return adjusted
 
     def _passthrough(self, payload: dict, reason: str = "") -> StandardMessage:
         payload["strategy_id"]    = None

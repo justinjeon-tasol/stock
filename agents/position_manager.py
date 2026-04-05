@@ -81,6 +81,9 @@ class PositionManager:
         phase: Optional[str] = None,
         mode: str = "MOCK",
         holding_period: Optional[str] = None,
+        signal_source: Optional[str] = None,
+        signal_confidence: Optional[str] = None,
+        signal_trigger: Optional[str] = None,
     ) -> Optional[str]:
         """
         신규 포지션 오픈.
@@ -109,6 +112,9 @@ class PositionManager:
             holding_period=holding_period,
             entry_time=entry_time,
             max_exit_date=max_exit_date,
+            signal_source=signal_source,
+            signal_confidence=signal_confidence,
+            signal_trigger=signal_trigger,
         )
         if position_id:
             period_str = f" [{holding_period}]" if holding_period else ""

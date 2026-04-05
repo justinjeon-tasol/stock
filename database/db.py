@@ -97,6 +97,15 @@ def save_trade(order_result: dict, signal: dict) -> Optional[str]:
                 "mode":        mode,
                 "strategy_id": result.get("strategy_id") or strategy_id,
             }
+            # 시그널 매트릭스 메타 (NULL 허용 컬럼, 값이 있을 때만 추가)
+            for col in ("signal_source", "signal_confidence", "signal_trigger"):
+                val = signal.get(col)
+                if val:
+                    row[col] = val
+            for col in ("backtest_win_rate", "backtest_expected_return"):
+                val = signal.get(col)
+                if val is not None:
+                    row[col] = float(val)
             client.table("trades").insert(row).execute()
             if first_id is None:
                 first_id = record_id
@@ -223,6 +232,9 @@ def save_position(
     holding_period: Optional[str] = None,
     entry_time: Optional[str] = None,
     max_exit_date: Optional[str] = None,
+    signal_source: Optional[str] = None,
+    signal_confidence: Optional[str] = None,
+    signal_trigger: Optional[str] = None,
 ) -> Optional[str]:
     """
     positions 테이블에 신규 OPEN 포지션 저장.
@@ -274,6 +286,13 @@ def save_position(
             row["entry_time"] = entry_time
         if max_exit_date:
             row["max_exit_date"] = max_exit_date
+        # 시그널 매트릭스 메타 (NULL 허용)
+        if signal_source:
+            row["signal_source"] = signal_source
+        if signal_confidence:
+            row["signal_confidence"] = signal_confidence
+        if signal_trigger:
+            row["signal_trigger"] = signal_trigger
         # peak_price는 avg_price로 초기화 (트레일링 스탑용)
         row["peak_price"] = avg_price
 

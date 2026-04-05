@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { TrendingUp, TrendingDown, RefreshCw } from 'lucide-react'
 import { usePositions } from '@/hooks/usePositions'
 import { HorizonBadge } from './HorizonBadge'
+import { SignalBadge } from '@/components/ui/SignalBadge'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { getPhaseToken } from '@/lib/phase-tokens'
@@ -103,7 +104,14 @@ export function PositionTable({ status }: PositionTableProps) {
                   {/* 종목 */}
                   <td className="py-3 px-3">
                     <div>
-                      <span className="font-medium text-[#f0f0f8]">{pos.name}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-[#f0f0f8]">{pos.name}</span>
+                        <SignalBadge
+                          source={pos.signal_source}
+                          confidence={pos.signal_confidence}
+                          trigger={pos.signal_trigger}
+                        />
+                      </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-xs text-[#555570]">{pos.code}</span>
                         {pos.mode === 'MOCK' && (

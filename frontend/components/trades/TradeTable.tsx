@@ -3,6 +3,7 @@
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { SignalBadge } from '@/components/ui/SignalBadge'
 import { getPhaseToken } from '@/lib/phase-tokens'
 import { formatDateTime, formatPrice, formatPct } from '@/lib/format'
 import type { Trade } from '@/lib/types'
@@ -25,7 +26,7 @@ export function TradeTable({ trades, loading, error }: TradeTableProps) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[#2a2a38]">
-            {['일시', '구분', '종목', '수량', '가격', '전략', '국면', '수익률', '모드'].map(
+            {['일시', '구분', '종목', '수량', '가격', '시그널', '전략', '국면', '수익률', '모드'].map(
               (h) => (
                 <th
                   key={h}
@@ -85,6 +86,26 @@ export function TradeTable({ trades, loading, error }: TradeTableProps) {
                 {/* 가격 */}
                 <td className="py-3 px-3 font-mono text-[#f0f0f8] whitespace-nowrap">
                   {formatPrice(trade.price)}
+                </td>
+
+                {/* 시그널 */}
+                <td className="py-3 px-3">
+                  {trade.signal_source ? (
+                    <div className="flex flex-col gap-0.5">
+                      <SignalBadge
+                        source={trade.signal_source}
+                        confidence={trade.signal_confidence}
+                        trigger={trade.signal_trigger}
+                      />
+                      {trade.backtest_win_rate != null && (
+                        <span className="text-[10px] text-[#8888a8]">
+                          승률 {(trade.backtest_win_rate * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-[#555570]">-</span>
+                  )}
                 </td>
 
                 {/* 전략 */}

@@ -347,6 +347,7 @@ class Executor(BaseAgent):
         results: list,
         phase: str,
         confidence: float,
+        targets: list = None,
     ) -> str:
         """
         주문 결과를 텔레그램 메시지 문자열로 변환한다.
@@ -355,14 +356,27 @@ class Executor(BaseAgent):
             results:    주문 결과 리스트
             phase:      시장 국면
             confidence: 신뢰도
+            targets:    매수 대상 종목 리스트 (시그널 출처 표시용)
 
         Returns:
             텔레그램 전송용 텍스트
         """
+        # targets를 code → target dict로 매핑
+        target_map = {}
+        if targets:
+            for t in targets:
+                target_map[t.get("code", "")] = t
+
         lines = ["[매수 주문]"]
         for r in results:
             status_label = "체결" if r["status"] == "OK" else f"실패({r['message']})"
             lines.append(f"- {r['name']}({r['code']}): 시장가 1주")
+            # 시그널 출처 표시
+            t = target_map.get(r.get("code", ""))
+            if t and t.get("signal_source") == "backtest_signal":
+                conf = t.get("signal_confidence", "")
+                trigger = t.get("signal_trigger", "")
+                lines.append(f"  시그널: {conf} 백테스팅 ({trigger})")
             lines.append(f"  상태: {status_label}")
 
         lines.append(f"- 국면: {phase} (신뢰도 {confidence * 100:.0f}%)")
@@ -1253,7 +1267,15 @@ class Executor(BaseAgent):
                             "results":  [r],
                             "mode":     "MOCK" if self._is_mock else "REAL",
                         }
-                        signal_payload = {"phase": phase, "strategy_id": strategy_id}
+                        signal_payload = {
+                            "phase": phase,
+                            "strategy_id": strategy_id,
+                            "signal_source": t.get("signal_source"),
+                            "signal_confidence": t.get("signal_confidence"),
+                            "signal_trigger": t.get("signal_trigger"),
+                            "backtest_win_rate": t.get("win_rate"),
+                            "backtest_expected_return": t.get("expected_return"),
+                        }
                         trade_id = save_trade(trade_payload, signal_payload)
                         self._position_manager.open_position(
                             code=code,
@@ -1265,6 +1287,9 @@ class Executor(BaseAgent):
                             phase=phase,
                             mode="MOCK" if self._is_mock else "REAL",
                             holding_period=holding_period,
+                            signal_source=t.get("signal_source"),
+                            signal_confidence=t.get("signal_confidence"),
+                            signal_trigger=t.get("signal_trigger"),
                         )
 
                         # DCA 2차 매수 대기 등록
@@ -1308,7 +1333,7 @@ class Executor(BaseAgent):
                 buy_results = [r for r in results if r["status"] in ("OK", "ERROR")]
                 if buy_results:
                     self._last_holding_period = holding_period
-                    tg_msg = self._build_telegram_message(results, phase, confidence)
+                    tg_msg = self._build_telegram_message(results, phase, confidence, targets)
                     await self._send_telegram(tg_msg)
 
         # 청산 조건 자동 체크 (HOLD 포함 매 사이클마다 실행, 토큰 없으면 내부에서 발급)
