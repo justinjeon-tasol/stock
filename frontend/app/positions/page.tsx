@@ -6,13 +6,14 @@ import { Card } from '@/components/ui/Card'
 import { cn } from '@/lib/cn'
 import type { PositionStatus } from '@/lib/types'
 
-const TABS: { label: string; value: PositionStatus }[] = [
-  { label: 'OPEN (보유중)', value: 'OPEN' },
+const TABS: { label: string; value: PositionStatus | 'OPEN_GROUPED' }[] = [
+  { label: 'OPEN (그룹)', value: 'OPEN_GROUPED' },
+  { label: 'OPEN (전체)', value: 'OPEN' },
   { label: 'CLOSED (청산)', value: 'CLOSED' },
 ]
 
 export default function PositionsPage() {
-  const [activeTab, setActiveTab] = useState<PositionStatus>('OPEN')
+  const [activeTab, setActiveTab] = useState<PositionStatus | 'OPEN_GROUPED'>('OPEN_GROUPED')
 
   return (
     <div className="space-y-6 animate-slide-in">
@@ -42,7 +43,10 @@ export default function PositionsPage() {
 
         {/* 테이블 */}
         <div className="p-4">
-          <PositionTable status={activeTab} />
+          <PositionTable
+            status={activeTab === 'OPEN_GROUPED' ? 'OPEN' : activeTab}
+            grouped={activeTab === 'OPEN_GROUPED'}
+          />
         </div>
       </Card>
     </div>

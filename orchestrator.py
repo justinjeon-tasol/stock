@@ -168,6 +168,20 @@ class Orchestrator:
             result["error"]  = f"Step2 MarketAnalyzer 실패: {exc}"
             return result
 
+        # 칼만 신호를 market_snapshots에 추가 저장
+        try:
+            ma_payload_kalman = step3_result.body.get("payload", {})
+            kalman_sigs = ma_payload_kalman.get("kalman_signals", {})
+            if kalman_sigs:
+                from database.db import _get_client
+                client = _get_client()
+                if client:
+                    client.table("market_snapshots").update(
+                        {"data": {"kalman_signals": kalman_sigs}}
+                    ).order("created_at", desc=True).limit(1).execute()
+        except Exception:
+            pass  # 실패해도 무시
+
         # -----------------------------------------------------------------
         # Step 2-b: 포지션 기간 재평가 (holding_period 업그레이드/다운그레이드)
         # -----------------------------------------------------------------
