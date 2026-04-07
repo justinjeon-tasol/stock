@@ -44,93 +44,95 @@ class MarketAnalyzer(BaseAgent):
     }
 
     # CLAUDE.md의 미국→한국 선행지표 매핑
+    # NOTE: 모의투자 검증용으로 threshold를 낮춤 (원래 값은 주석 참고)
+    # 실전 전환 시 원복 필요
     LEADING_INDICATOR_MAP = {
         "nasdaq_surge": {
-            "threshold_pct": 1.5,
+            "threshold_pct": 0.3,   # 원래 1.5
             "kr_sectors": ["지수ETF"],
             "kr_themes": [],
             "direction": "BUY",
             "description": "나스닥100 급등 → 코스닥 추종",
         },
         "sox_surge": {
-            "threshold_pct": 2.0,
+            "threshold_pct": 0.5,   # 원래 2.0
             "kr_sectors": ["반도체"],
             "kr_themes": ["AI/HBM", "반도체장비"],
             "direction": "BUY",
             "description": "SOX 급등 → 반도체 수혜",
         },
         "nvidia_surge": {
-            "threshold_pct": 3.0,
+            "threshold_pct": 0.8,   # 원래 3.0
             "kr_sectors": ["반도체"],
             "kr_themes": ["AI/HBM"],
             "direction": "BUY",
             "description": "엔비디아 급등 → HBM/AI 반도체",
         },
         "amd_surge": {
-            "threshold_pct": 3.0,
+            "threshold_pct": 0.8,   # 원래 3.0
             "kr_sectors": ["반도체"],
             "kr_themes": ["AI/HBM"],
             "direction": "BUY",
             "description": "AMD 급등 → 반도체 섹터 강세",
         },
         "tesla_strong": {
-            "threshold_pct": 2.0,
+            "threshold_pct": 0.5,   # 원래 2.0
             "kr_sectors": ["2차전지"],
             "kr_themes": [],
             "direction": "BUY",
             "description": "테슬라 강세 → 2차전지 수혜",
         },
         "wti_surge": {
-            "threshold_pct": 3.0,
+            "threshold_pct": 0.8,   # 원래 3.0
             "kr_sectors": ["정유"],
             "kr_themes": [],
             "direction": "BUY",
             "description": "WTI 급등 → 정유주 수혜",
         },
         "gold_strong": {
-            "threshold_pct": 1.5,
+            "threshold_pct": 0.5,   # 원래 1.5
             "kr_sectors": [],
             "kr_themes": [],
             "direction": "AVOID",
             "description": "금 강세 → 안전자산 선호, 위험자산 하락",
         },
         "vix_spike": {
-            "threshold_val": 30.0,
+            "threshold_val": 30.0,  # AVOID/SELL은 유지 (안전)
             "kr_sectors": [],
             "kr_themes": [],
             "direction": "AVOID",
             "description": "VIX 30 돌파 → 외국인 대량 매도 예고",
         },
         "dollar_strong": {
-            "threshold_pct": 1.0,
+            "threshold_pct": 1.0,   # AVOID 유지
             "kr_sectors": [],
             "kr_themes": [],
             "direction": "AVOID",
             "description": "달러 강세 → 외국인 순매도 압력",
         },
         "copper_strong": {
-            "threshold_pct": 2.0,
+            "threshold_pct": 0.5,   # 원래 2.0
             "kr_sectors": ["전반"],
             "kr_themes": [],
             "direction": "BUY",
             "description": "구리 강세 → 경기회복 신호",
         },
         "nasdaq_crash": {
-            "threshold_pct": -2.0,
+            "threshold_pct": -2.0,  # SELL은 유지 (안전)
             "kr_sectors": ["지수ETF"],
             "kr_themes": [],
             "direction": "SELL",
             "description": "나스닥 급락 → 지수ETF 선제 매도",
         },
         "sox_crash": {
-            "threshold_pct": -3.0,
+            "threshold_pct": -3.0,  # SELL 유지
             "kr_sectors": ["반도체"],
             "kr_themes": ["AI/HBM", "반도체장비"],
             "direction": "SELL",
             "description": "SOX 급락 → 반도체 선제 매도",
         },
         "tesla_crash": {
-            "threshold_pct": -3.0,
+            "threshold_pct": -3.0,  # SELL 유지
             "kr_sectors": ["2차전지"],
             "kr_themes": [],
             "direction": "SELL",
