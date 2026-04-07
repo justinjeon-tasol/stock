@@ -134,6 +134,8 @@ class SignalService:
             )
 
             rows = query.data or []
+            logger.info("[SignalService] 조회: %s/%s → %d건 (confidence=%s, lag=%d~%d)",
+                        indicator_id, direction, len(rows), confidence_levels, min_lag, max_lag)
 
             # 같은 종목에 여러 lag가 있을 수 있으므로 가장 짧은 lag만 사용
             best_by_stock: dict = {}

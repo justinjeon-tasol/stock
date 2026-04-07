@@ -1761,10 +1761,12 @@ class WeightAdjuster(BaseAgent):
             all_candidates: list = []
             seen_codes: set = set()
 
+            self.log("debug", f"시그널 매트릭스 조회 시작: BUY 신호 {len(buy_signals)}개")
             for sig in buy_signals:
                 signal_id = sig.get("signal_id", "")
                 parsed = SignalService.parse_signal_id(signal_id)
                 if parsed is None:
+                    self.log("debug", f"시그널 매트릭스: {signal_id} 매핑 없음 → skip")
                     continue
 
                 indicator_id, event_direction = parsed
@@ -1773,6 +1775,7 @@ class WeightAdjuster(BaseAgent):
                     direction=event_direction,
                     min_confidence="★★",
                 )
+                self.log("debug", f"시그널 매트릭스: {signal_id} → {indicator_id}/{event_direction} → {len(stock_signals)}종목")
 
                 trigger_key = f"{indicator_id}_{event_direction}"
                 for s in stock_signals:
