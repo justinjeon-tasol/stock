@@ -336,6 +336,50 @@ class Orchestrator:
             save_market_phase(signal_payload)
             save_agent_log("OR", "info", f"파이프라인 완료: {result['phase']} / {result['direction']}")
 
+            # 신규 매수 종목 exit_plan 재생성 (체결가 기반)
+            buy_orders = [
+                o for o in result["orders"]
+                if o.get("status") == "OK" and o.get("action") == "BUY"
+            ]
+            if buy_orders:
+                try:
+                    from database.db import get_open_positions, save_exit_plan
+                    from agents.executor import Executor
+                    open_positions = get_open_positions()
+                    bought_codes = {o["code"] for o in buy_orders}
+                    phase_now = signal_payload.get("phase", "일반장")
+                    ma_payload_ep = step3_result.body.get("payload", {})
+                    forecasts_ep = ma_payload_ep.get("price_forecasts", {})
+                    ep_count = 0
+                    for pos in open_positions:
+                        code = pos.get("code", "")
+                        if code not in bought_codes:
+                            continue
+                        avg_price = float(pos.get("avg_price", 0))
+                        fc = forecasts_ep.get(code, {})
+                        # 체결가 기반으로 forecast 보정: current_price를 avg_price로 설정
+                        fc["current_price"] = avg_price
+                        # target이 매입가 이하면 매입가 기준으로 재설정
+                        for key in ("target_1w", "target_1m"):
+                            if fc.get(key, 0) <= avg_price:
+                                fc[key] = avg_price * 1.05  # 최소 +5% 목표
+                        plan = Executor.build_exit_plan(
+                            position_id=pos["id"], code=code,
+                            name=pos.get("name", ""),
+                            avg_price=avg_price,
+                            quantity=int(pos.get("quantity", 0)),
+                            holding_period=pos.get("holding_period", "단기"),
+                            forecast=fc, current_phase=phase_now,
+                        )
+                        save_exit_plan(plan)
+                        ep_count += 1
+                    if ep_count:
+                        self._logger.info(
+                            "[5-b] 신규 매수 exit_plan 재생성: %d종목 (체결가 기반)", ep_count
+                        )
+                except Exception as exc:
+                    self._logger.warning("[5-b] exit_plan 재생성 실패 (무시): %s", exc)
+
             # 계좌 잔고 스냅샷 저장
             try:
                 acct = await self.executor.fetch_account_summary()
