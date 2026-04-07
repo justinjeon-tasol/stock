@@ -69,6 +69,7 @@ class Executor(BaseAgent):
         self._load_dca_config()
         self._partial_tp_enabled = False
         self._partial_tp_levels: list = []
+        self._kalman_signals: dict = {}  # 칼만 MA 신호 (파이프라인에서 갱신)
         self._load_partial_tp_config()
 
     # ------------------------------------------------------------------
@@ -472,6 +473,25 @@ class Executor(BaseAgent):
                             override_sl = float(dsl["current_sl_price"])
                 except Exception:
                     pass
+
+                # ── 칼만 MA 하향 이탈 → SL 강화 (초단기 제외) ──
+                holding_period = pos.get("holding_period", "단기")
+                if holding_period != "초단기" and self._kalman_signals:
+                    k_sig = self._kalman_signals.get(code)
+                    if k_sig:
+                        k_trend = k_sig.get("trend", "FLAT")
+                        k_above = k_sig.get("price_above_kalman", True)
+                        k_cross = k_sig.get("crossover")
+                        if k_cross == "DOWN" or (k_trend == "DOWN" and not k_above):
+                            # 수익권이면 현재가 -0.3%로 SL 강화 (수익 보전)
+                            # 손실권이면 현재가 -1.0%로 SL 강화 (추가 손실 방지)
+                            margin = 0.003 if pnl_pct >= 0 else 0.01
+                            kalman_sl = current_price * (1 - margin)
+                            if override_sl is None or kalman_sl > override_sl:
+                                override_sl = kalman_sl
+                                self.log("info",
+                                    f"[칼만] {name}({code}) 하향이탈 → SL 강화: "
+                                    f"{kalman_sl:,.0f}원 (손익={pnl_pct:+.1f}%)")
 
                 exit_reason = self._position_manager.check_exit_condition(
                     pos, current_price, current_phase, override_sl_price=override_sl
@@ -1042,6 +1062,9 @@ class Executor(BaseAgent):
         sell_targets    = payload.get("sell_targets",    [])
         reason          = payload.get("reason",          "")
         strategy_id     = payload.get("strategy_id",     None)
+        # 칼만 MA 신호 갱신 (청산 루프에서 사용)
+        self._kalman_signals = payload.get("kalman_signals", {})
+
         # 투자 기간: SIGNAL에 포함되거나 국면 기본값으로 결정
         holding_period  = payload.get(
             "holding_period",

@@ -259,6 +259,13 @@ class MarketAnalyzer(BaseAgent):
             self.log("info", f"낙폭과대 후보: {len(oversold_candidates)}종목 "
                              f"({', '.join(c['name'] for c in oversold_candidates)})")
 
+        # 칼만 필터 MA 분석
+        kalman_signals = self.scan_kalman_signals(kr)
+        self.log("info", f"칼만 분석: {len(kalman_signals)}종목"
+                         + (f" (UP: {sum(1 for v in kalman_signals.values() if v.get('trend')=='UP')},"
+                            f" DOWN: {sum(1 for v in kalman_signals.values() if v.get('trend')=='DOWN')})"
+                            if kalman_signals else ""))
+
         # ── 추세 필터 (Filter 2) — 전 종목 일괄 평가 ──
         trend_filter_results = {}
         try:
@@ -294,6 +301,7 @@ class MarketAnalyzer(BaseAgent):
             "stock_institution_net": kr.get("stock_institution_net", {}),  # C안 기관
             "oversold_candidates":  oversold_candidates,                # 대폭락장 반등
             "trend_filter_results": trend_filter_results,               # Filter 2
+            "kalman_signals":       kalman_signals,                     # 칼만 MA 신호
         }
 
         # ── 이슈 감지 (IssueManager 흡수) ──
@@ -735,6 +743,52 @@ class MarketAnalyzer(BaseAgent):
             return rs_scores
         except Exception as exc:
             self.log("warning", f"RS 분석 실패: {exc}")
+            return {}
+
+    # ------------------------------------------------------------------
+    # 칼만 필터 MA 분석
+    # ------------------------------------------------------------------
+
+    def scan_kalman_signals(self, kr_market: dict) -> dict:
+        """
+        추적 종목의 칼만 MA 신호를 생성한다.
+
+        반환:
+        {
+          "005930": {"kalman_ma": 78400, "trend": "UP", "price_above_kalman": True,
+                     "crossover": "UP", "slope_pct": 0.35, "distance_pct": 1.2},
+          ...
+        }
+        """
+        try:
+            from data.history.history_loader import get_loader
+            from services.kalman_filter import compute_kalman_signal
+            loader = get_loader()
+
+            stocks_data = kr_market.get("stocks", {})
+            results = {}
+
+            for code, symbol in self._rs_stock_map.items():
+                try:
+                    close = loader._load_close(symbol)
+                    if close is None or len(close) < 20:
+                        continue
+
+                    prices = close.tolist()
+
+                    # 실시간 가격 우선
+                    today_price = (stocks_data.get(code) or {}).get("price")
+                    cur = float(today_price) if (today_price and today_price > 0) else None
+
+                    sig = compute_kalman_signal(prices, current_price=cur)
+                    if sig:
+                        results[code] = sig
+                except Exception:
+                    continue
+
+            return results
+        except Exception as exc:
+            self.log("warning", f"칼만 분석 실패: {exc}")
             return {}
 
     # ------------------------------------------------------------------

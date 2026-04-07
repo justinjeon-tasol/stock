@@ -149,6 +149,7 @@ class WeightAdjuster(BaseAgent):
         stock_institution_net = payload.get("stock_institution_net", {})  # C안 기관
         oversold_candidates  = payload.get("oversold_candidates", []) # 대폭락장 반등
         trend_filter_results = payload.get("trend_filter_results", {})  # Filter 2
+        kalman_signals       = payload.get("kalman_signals", {})        # 칼만 MA 신호
 
         phase      = market_phase_data.get("phase",      "일반장")
         confidence = market_phase_data.get("confidence", 0.5)
@@ -184,7 +185,8 @@ class WeightAdjuster(BaseAgent):
                                        rs_scores=rs_scores, stock_foreign_net=stock_foreign_net,
                                        stock_institution_net=stock_institution_net,
                                        oversold_candidates=oversold_candidates, phase=phase,
-                                       trend_filter_results=trend_filter_results)
+                                       trend_filter_results=trend_filter_results,
+                                       kalman_signals=kalman_signals)
         self.log("info", f"targets: {len(targets)}종목")
 
         # 3-a. defensive 자산 선택 (defensive_pct > 0이면 방어ETF에서 종목 선택)
@@ -272,6 +274,7 @@ class WeightAdjuster(BaseAgent):
             "sell_targets":      sell_targets,
             "weight_config":     weight_config,
             "reason":            reason,
+            "kalman_signals":    kalman_signals,
         }
 
         # body의 payload를 완성된 값으로 교체
@@ -424,6 +427,7 @@ class WeightAdjuster(BaseAgent):
         oversold_candidates: list = None,
         phase: str = "",
         trend_filter_results: dict = None,
+        kalman_signals: dict = None,
     ) -> list:
         """
         targets 종목 리스트를 결정한다.
@@ -552,8 +556,11 @@ class WeightAdjuster(BaseAgent):
                         for c in candidates:
                             c["weight"] = round(c["weight"] * scale, 4)
 
+                    # 칼만 필터 적용
+                    candidates = self._apply_kalman_buy_filter(candidates, kalman_signals)
+
                     if candidates:
-                        self.log("info", f"한국 모멘텀 BUY: RS 기반 {len(candidates)}종목 선정")
+                        self.log("info", f"한국 모멘텀 BUY: RS+칼만 기반 {len(candidates)}종목 선정")
                         return candidates
 
             return []
@@ -616,6 +623,9 @@ class WeightAdjuster(BaseAgent):
             stock_foreign_net=stock_foreign_net,
             stock_institution_net=stock_institution_net)
 
+        # Step 7c: 칼만 MA 매수 타이밍 필터 — 하향 추세 종목 제거
+        candidates = self._apply_kalman_buy_filter(candidates, kalman_signals)
+
         # Step 8: 이미 보유 중인 종목 제외 → 신규 매수 가능 종목만 남김
         candidates = [
             c for c in candidates
@@ -642,6 +652,48 @@ class WeightAdjuster(BaseAgent):
                 c["weight"] = round(c["weight"] * scale, 4)
 
         return candidates
+
+    # ------------------------------------------------------------------
+    # 칼만 MA 매수 타이밍 필터
+    # ------------------------------------------------------------------
+
+    def _apply_kalman_buy_filter(self, candidates: list, kalman_signals: dict = None) -> list:
+        """
+        칼만 MA 하향 추세 종목을 제거하고 상향 돌파 종목에 부스트를 적용한다.
+
+        - crossover == "UP" → weight × 1.15 부스트
+        - trend == "UP" and price_above_kalman → 통과
+        - trend == "DOWN" and not price_above_kalman → 제거
+        - 칼만 데이터 없는 종목 → 통과 (Graceful Degradation)
+        """
+        if not kalman_signals or not candidates:
+            return candidates
+
+        filtered = []
+        removed = []
+        for c in candidates:
+            sig = kalman_signals.get(c["code"])
+            if not sig:
+                filtered.append(c)
+                continue
+
+            trend = sig.get("trend", "FLAT")
+            above = sig.get("price_above_kalman", True)
+            cross = sig.get("crossover")
+
+            if trend == "DOWN" and not above:
+                removed.append(c["name"])
+                continue
+
+            if cross == "UP":
+                c["weight"] = round(c["weight"] * 1.15, 4)
+
+            filtered.append(c)
+
+        if removed:
+            self.log("info", f"칼만 필터 제거: {', '.join(removed)}")
+
+        return filtered
 
     # ------------------------------------------------------------------
     # defensive 자산 선택
