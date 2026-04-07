@@ -362,6 +362,11 @@ class WeightAdjuster(BaseAgent):
             return "HOLD"
 
         if not buy_signals:
+            # 한국 시장 모멘텀 BUY: 상승장/대상승장이면서 AVOID 신호가 없으면
+            # 미국 선행지표 없이도 한국 시장 자체 모멘텀으로 매수 허용
+            if phase in ("상승장", "대상승장") and not avoid_signals:
+                self.log("info", f"미국 신호 없으나 한국 시장 모멘텀 BUY (국면={phase})")
+                return "BUY"
             return "HOLD"
 
         # AVOID 신호가 BUY 신호보다 많으면 HOLD (위험 우선)
@@ -503,6 +508,54 @@ class WeightAdjuster(BaseAgent):
                     sector_strength[sector] = sector_strength.get(sector, 0.0) + strength
 
         if not sector_strength:
+            # ── 한국 시장 모멘텀 폴백: RS STRONG 종목 기반 선정 ──────────
+            # 미국 신호 없이 BUY 진입 시 (상승장/대상승장 모멘텀)
+            # RS 분석에서 STRONG인 종목을 타겟으로 선정
+            if direction == "BUY" and rs_scores:
+                strong_stocks = [
+                    code for code, rs in rs_scores.items()
+                    if rs.get("signal") == "STRONG"
+                ]
+                if not strong_stocks:
+                    # STRONG 없으면 NEUTRAL 중 rs_5d 상위 종목
+                    neutral = [
+                        (code, rs.get("rs_5d", 0) or 0)
+                        for code, rs in rs_scores.items()
+                        if rs.get("signal") == "NEUTRAL"
+                    ]
+                    neutral.sort(key=lambda x: x[1], reverse=True)
+                    strong_stocks = [code for code, _ in neutral[:4]]
+
+                if strong_stocks:
+                    candidates = []
+                    per_weight = round(aggressive_pct / len(strong_stocks), 4)
+                    for code in strong_stocks:
+                        name = ""
+                        for sector_stocks in self._stock_universe.values():
+                            for s in sector_stocks:
+                                if s.get("code") == code:
+                                    name = s.get("name", code)
+                                    break
+                            if name:
+                                break
+                        if not self._position_manager.is_already_held(code):
+                            candidates.append({"code": code, "name": name or code, "weight": per_weight})
+
+                    max_targets = self._risk_manager.get_max_positions(phase) if phase else _MAX_TARGETS
+                    current_positions = len(self._position_manager.get_open_positions())
+                    available_slots = max(0, max_targets - current_positions)
+                    candidates = candidates[:available_slots]
+
+                    total_weight = sum(c["weight"] for c in candidates)
+                    if total_weight > aggressive_pct and total_weight > 0:
+                        scale = aggressive_pct / total_weight
+                        for c in candidates:
+                            c["weight"] = round(c["weight"] * scale, 4)
+
+                    if candidates:
+                        self.log("info", f"한국 모멘텀 BUY: RS 기반 {len(candidates)}종목 선정")
+                        return candidates
+
             return []
 
         # 섹터별 종목 수집 및 raw weight 계산
