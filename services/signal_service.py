@@ -34,16 +34,16 @@ _SIGNAL_ID_TO_INDICATOR = {
     "nasdaq_crash":  ("nasdaq", "down"),
     "sox_surge":     ("sox", "up"),
     "sox_crash":     ("sox", "down"),
-    "nvidia_surge":  ("nvidia", "up"),
+    "nvidia_surge":  ("nvda", "up"),       # DB: nvda
     "amd_surge":     ("amd", "up"),
-    "tesla_strong":  ("tesla", "up"),
-    "tesla_crash":   ("tesla", "down"),
+    "tesla_strong":  ("tsla", "up"),       # DB: tsla
+    "tesla_crash":   ("tsla", "down"),     # DB: tsla
     "wti_surge":     ("wti", "up"),
     "copper_strong": ("copper", "up"),
     "gold_strong":   ("gold", "up"),
     "vix_spike":     ("vix", "up"),
     "vix_warning":   ("vix", "up"),
-    "dollar_strong": ("dollar", "up"),
+    "dollar_strong": ("usdkrw", "up"),     # DB: usdkrw
 }
 
 
@@ -124,7 +124,7 @@ class SignalService:
                 client.table("indicator_stock_correlations")
                 .select("*")
                 .eq("indicator_id", indicator_id)
-                .eq("event_direction", direction)
+                .eq("direction", direction)
                 .in_("confidence", confidence_levels)
                 .gte("lag_days", min_lag)
                 .lte("lag_days", max_lag)
@@ -200,7 +200,7 @@ class SignalService:
 
             query = (
                 client.table("indicator_stock_correlations")
-                .select("indicator_id,event_direction,signal_direction,mean_excess_return,confidence,lag_days")
+                .select("indicator_id,direction,signal_direction,mean_excess_return,confidence,lag_days")
                 .eq("stock_code", stock_code)
                 .in_("confidence", confidence_levels)
                 .gte("updated_at", cutoff)
@@ -211,7 +211,7 @@ class SignalService:
             results = [
                 {
                     "indicator_id": row.get("indicator_id", ""),
-                    "event_direction": row.get("event_direction", ""),
+                    "event_direction": row.get("direction", ""),
                     "signal_direction": row.get("signal_direction", ""),
                     "mean_excess_return": float(row.get("mean_excess_return", 0)),
                     "confidence": row.get("confidence", "★"),
