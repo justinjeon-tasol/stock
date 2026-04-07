@@ -26,7 +26,17 @@ KR_DIR   = HIST_DIR / "kr_market"
 COM_DIR  = HIST_DIR / "commodity"
 COR_DIR  = HIST_DIR / "correlation"
 
-# 에이전트에서 사용할 심볼 → 파일명 매핑
+# extended/ 폴백 경로 (GCP 등 us_market/kr_market 폴더가 없는 환경)
+_EXT_DIR       = HIST_DIR / "extended"
+_EXT_US_IDX    = _EXT_DIR / "us_index"
+_EXT_US_STK    = _EXT_DIR / "us_stocks"
+_EXT_KR_IDX    = _EXT_DIR / "kr_index"
+_EXT_KR_STK    = _EXT_DIR / "kr_stocks"
+_EXT_COM       = _EXT_DIR / "commodities"
+_EXT_FOREX     = _EXT_DIR / "forex"
+_EXT_BONDS     = _EXT_DIR / "bonds"
+
+# 에이전트에서 사용할 심볼 → 파일명 매핑 (기본 경로)
 _SYMBOL_MAP = {
     # 미국 지수
     "nasdaq":  US_DIR / "nasdaq.csv",
@@ -63,6 +73,42 @@ _SYMBOL_MAP = {
     "hyundai":     KR_DIR / "stock_hyundai.csv",
 }
 
+# extended/ 폴백 매핑 (기본 경로 파일이 없을 때 사용)
+_SYMBOL_MAP_FALLBACK = {
+    # 미국 지수/종목
+    "nasdaq":  _EXT_US_IDX / "nasdaq.csv",
+    "sox":     _EXT_US_IDX / "sox.csv",
+    "sp500":   _EXT_US_IDX / "sp500.csv",
+    "vix":     _EXT_US_IDX / "vix.csv",
+    "nvidia":  _EXT_US_STK / "nvidia.csv",
+    "amd":     _EXT_US_STK / "amd.csv",
+    "tsmc":    _EXT_US_STK / "tsmc.csv",
+    "tesla":   _EXT_US_STK / "tesla.csv",
+    "usd_krw": _EXT_FOREX  / "usd_krw.csv",
+    "us10y":   _EXT_BONDS  / "us_10y.csv",
+    # 원자재
+    "wti":     _EXT_COM / "wti.csv",
+    "gold":    _EXT_COM / "gold.csv",
+    "silver":  _EXT_COM / "silver.csv",
+    "copper":  _EXT_COM / "copper.csv",
+    "natgas":  _EXT_COM / "natural_gas.csv",
+    # 한국 지수
+    "KOSPI":   _EXT_KR_IDX / "kospi.csv",
+    "KOSDAQ":  _EXT_KR_IDX / "kosdaq.csv",
+    "KS200":   _EXT_KR_IDX / "ks200.csv",
+    # 한국 종목
+    "samsung":     _EXT_KR_STK / "samsung.csv",
+    "sk_hynix":    _EXT_KR_STK / "sk_hynix.csv",
+    "lg_energy":   _EXT_KR_STK / "lg_energy.csv",
+    "samsung_sdi": _EXT_KR_STK / "samsung_sdi.csv",
+    "hanmi_semi":  _EXT_KR_STK / "hanmi_semi.csv",
+    "sk_inno":     _EXT_KR_STK / "sk_inno.csv",
+    "posco":       _EXT_KR_STK / "posco.csv",
+    "kakao":       _EXT_KR_STK / "kakao.csv",
+    "naver":       _EXT_KR_STK / "naver.csv",
+    "hyundai":     _EXT_KR_STK / "hyundai.csv",
+}
+
 
 class HistoryLoader:
     """과거 가격 데이터 조회 유틸리티."""
@@ -76,6 +122,8 @@ class HistoryLoader:
             return self._cache[symbol]
 
         path = _SYMBOL_MAP.get(symbol)
+        if path is None or not path.exists():
+            path = _SYMBOL_MAP_FALLBACK.get(symbol)
         if path is None or not path.exists():
             return None
 
