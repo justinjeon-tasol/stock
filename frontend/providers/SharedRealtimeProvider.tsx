@@ -11,16 +11,18 @@ import {
 } from "react";
 import { supabase } from "@/lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import type { MarketPhase, AccountSummary, Position } from "@/lib/types";
+import type { MarketPhase, AccountSummary, Position, Trade } from "@/lib/types";
 
 interface RealtimeData {
   marketPhase: MarketPhase | null;
   accountSummary: AccountSummary | null;
   positions: Position[];
+  recentTrades: Trade[];
   lastUpdated: {
     marketPhase: Date | null;
     accountSummary: Date | null;
     positions: Date | null;
+    trades: Date | null;
   };
   isConnected: boolean;
   refresh: (table?: string) => Promise<void>;
@@ -30,7 +32,8 @@ const RealtimeContext = createContext<RealtimeData>({
   marketPhase: null,
   accountSummary: null,
   positions: [],
-  lastUpdated: { marketPhase: null, accountSummary: null, positions: null },
+  recentTrades: [],
+  lastUpdated: { marketPhase: null, accountSummary: null, positions: null, trades: null },
   isConnected: false,
   refresh: async () => {},
 });
@@ -45,11 +48,13 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
     null
   );
   const [positions, setPositions] = useState<Position[]>([]);
+  const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdated, setLastUpdated] = useState({
     marketPhase: null as Date | null,
     accountSummary: null as Date | null,
     positions: null as Date | null,
+    trades: null as Date | null,
   });
 
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -62,6 +67,18 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
     if (data) {
       setPositions(data as Position[]);
       setLastUpdated((prev) => ({ ...prev, positions: new Date() }));
+    }
+  }, []);
+
+  const fetchRecentTrades = useCallback(async () => {
+    const { data } = await supabase
+      .from("trades")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (data) {
+      setRecentTrades(data as Trade[]);
+      setLastUpdated((prev) => ({ ...prev, trades: new Date() }));
     }
   }, []);
 
@@ -91,7 +108,8 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
     }
 
     await fetchPositions();
-  }, [fetchPositions]);
+    await fetchRecentTrades();
+  }, [fetchPositions, fetchRecentTrades]);
 
   const refresh = useCallback(
     async (table?: string) => {
@@ -125,8 +143,11 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
       if (!table || table === "positions") {
         await fetchPositions();
       }
+      if (!table || table === "trades") {
+        await fetchRecentTrades();
+      }
     },
-    [fetchPositions]
+    [fetchPositions, fetchRecentTrades]
   );
 
   useEffect(() => {
@@ -162,6 +183,13 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
           fetchPositions();
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "trades" },
+        () => {
+          fetchRecentTrades();
+        }
+      )
       .subscribe((status) => {
         setIsConnected(status === "SUBSCRIBED");
       });
@@ -173,7 +201,7 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, [fetchInitialData, fetchPositions]);
+  }, [fetchInitialData, fetchPositions, fetchRecentTrades]);
 
   return (
     <RealtimeContext.Provider
@@ -181,6 +209,7 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
         marketPhase,
         accountSummary,
         positions,
+        recentTrades,
         lastUpdated,
         isConnected,
         refresh,

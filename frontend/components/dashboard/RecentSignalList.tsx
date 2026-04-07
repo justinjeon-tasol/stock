@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowUpRight, ArrowDownLeft, Minus } from 'lucide-react'
-import { useTrades } from '@/hooks/useTrades'
+import { useSharedRealtime } from '@/providers/SharedRealtimeProvider'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -18,9 +18,11 @@ function ActionIcon({ action }: { action: Trade['action'] }) {
 }
 
 export function RecentSignalList() {
-  const { trades, loading, error } = useTrades()
+  const { recentTrades, lastUpdated } = useSharedRealtime()
+  const loading = lastUpdated.trades === null
+  const error = null
 
-  const recent = trades.slice(0, 8)
+  const recent = recentTrades.slice(0, 8)
 
   return (
     <Card>
