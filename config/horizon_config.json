@@ -20,15 +20,15 @@
       "description": "1~5 거래일 보유. 트레일링 스탑으로 상승 흐름 최대 활용.",
       "max_hold_days": 5,
       "time_exit": null,
-      "take_profit_pct": 10.0,
-      "stop_loss_pct": -2.0,
+      "take_profit_pct": 7.0,
+      "stop_loss_pct": -1.5,
       "trailing_stop": true,
       "trailing_stop_pct": 1.5,
       "trailing_activate_pct": 2.0,
       "exit_on_phase_change": ["하락장", "대폭락장"],
       "compatible_phases": ["대상승장", "상승장", "일반장"],
       "signal_type": "overnight",
-      "risk_note": "+2% 도달 시 트레일링 활성화. 고점 대비 -1.5% 하락 시 청산. 최대 TP 10%."
+      "risk_note": "BT-05 기준: SL -1.5% / TP +7.0% (PF 1.93). +2% 트레일링 활성화."
     },
     "중기": {
       "label": "중기",

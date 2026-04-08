@@ -444,6 +444,27 @@ class Executor(BaseAgent):
                     continue
                 pnl_pct = (current_price - avg_price) / avg_price * 100
 
+                # ── 매수 후 보호 시간 체크 (2시간) ──
+                # 보호 시간 내에는 exit_plan/분할매도 발동 차단 (손절만 허용)
+                entry_str = pos.get("entry_time", "")
+                buy_protected = False
+                if entry_str:
+                    try:
+                        entry_dt = datetime.fromisoformat(entry_str.replace("Z", "+00:00"))
+                        hours_held = (datetime.now(timezone.utc) - entry_dt).total_seconds() / 3600
+                        if hours_held < 2.0:
+                            buy_protected = True
+                    except Exception:
+                        pass
+
+                if buy_protected:
+                    # 보호 시간 내: 큰 손실(-3% 이하)만 긴급 손절, 나머지는 스킵
+                    if pnl_pct <= -3.0:
+                        self.log("warning",
+                            f"[보호시간] {name}({code}) 긴급손절 발동: {pnl_pct:+.1f}%")
+                    else:
+                        continue
+
                 # ── exit_plan 기반 매도 체크 (forecast 기반, 최우선) ──
                 plan_result = await self._check_exit_plan(
                     token, pos, current_price, pnl_pct, current_phase
@@ -691,6 +712,9 @@ class Executor(BaseAgent):
         avg_price   = float(position.get("avg_price", 0))
 
         sell_qty = max(1, int(quantity * sell_ratio))
+        # 최소 매도 수량: 보유량의 30% 이상
+        min_sell = max(1, int(quantity * 0.3))
+        sell_qty = max(sell_qty, min_sell)
         remaining = quantity - sell_qty
 
         if remaining < 1:
@@ -802,6 +826,9 @@ class Executor(BaseAgent):
                 sell_qty = quantity  # 잔량 전부
             else:
                 sell_qty = max(1, int(quantity * sell_ratio))
+                # 최소 매도 수량: 보유량의 30% 이상
+                min_sell = max(1, int(quantity * 0.3))
+                sell_qty = max(sell_qty, min_sell)
                 if sell_qty >= quantity:
                     sell_qty = max(1, quantity - 1)  # 최소 1주 남김
 
@@ -1234,6 +1261,57 @@ class Executor(BaseAgent):
                             "message": "매도 직후 재매수 방지",
                         })
                         continue
+
+                    # 재매수 쿨다운 (1시간) + 추격매수 방지 (+2%)
+                    try:
+                        from database.db import _get_client
+                        _cooldown_client = _get_client()
+                        if _cooldown_client:
+                            recent_sell = (
+                                _cooldown_client.table("trades")
+                                .select("price,created_at")
+                                .eq("code", code)
+                                .eq("action", "SELL")
+                                .order("created_at", desc=True)
+                                .limit(1)
+                                .execute()
+                            )
+                            if recent_sell.data:
+                                last_sell = recent_sell.data[0]
+                                sell_time = datetime.fromisoformat(
+                                    last_sell["created_at"].replace("Z", "+00:00")
+                                )
+                                hours_since_sell = (
+                                    datetime.now(timezone.utc) - sell_time
+                                ).total_seconds() / 3600
+                                if hours_since_sell < 1.0:
+                                    self.log("info",
+                                        f"{name}({code}) 매도 후 {hours_since_sell:.0f}분 → 쿨다운 SKIP")
+                                    results.append({
+                                        "code": code, "name": name,
+                                        "status": "SKIP", "order_no": "",
+                                        "message": f"재매수 쿨다운 ({hours_since_sell*60:.0f}분)",
+                                    })
+                                    continue
+
+                                # 추격매수 방지: 마지막 매도가 대비 +2% 이상이면 SKIP
+                                last_sell_price = float(last_sell.get("price", 0))
+                                if last_sell_price > 0:
+                                    cur_px = await self._position_manager.fetch_current_price(
+                                        token, code
+                                    )
+                                    if cur_px and cur_px > last_sell_price * 1.02:
+                                        self.log("info",
+                                            f"{name}({code}) 추격매수 방지: "
+                                            f"현재가 {cur_px:,.0f} > 매도가 {last_sell_price:,.0f}×1.02")
+                                        results.append({
+                                            "code": code, "name": name,
+                                            "status": "SKIP", "order_no": "",
+                                            "message": "추격매수 방지 (+2% 초과)",
+                                        })
+                                        continue
+                    except Exception:
+                        pass  # 쿨다운 체크 실패 시 무시하고 진행
 
                     if token is None:
                         results.append({

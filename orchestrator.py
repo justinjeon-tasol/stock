@@ -577,6 +577,8 @@ class Orchestrator:
         stop_take_task = asyncio.create_task(self._stop_take_loop())
         self._logger.info("[청산루프] 독립 청산 체크 태스크 시작 (국면별 1분/3분)")
 
+        _pipeline_running = False  # 중복 실행 방지 락
+
         while True:
             run_start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             session_mode = self._get_session_mode()
@@ -628,6 +630,13 @@ class Orchestrator:
                 self._backtest_ran_today = False
             last_history_date = new_date
 
+            # 중복 실행 방지
+            if _pipeline_running:
+                self._logger.warning("이전 파이프라인 실행 중 — 건너뜀")
+                await asyncio.sleep(60)
+                continue
+
+            _pipeline_running = True
             try:
                 result = await self.run_once()
                 status  = result.get("status", "unknown")
@@ -652,6 +661,8 @@ class Orchestrator:
                 break
             except Exception as exc:
                 self._logger.error("파이프라인 예외 발생: %s - 다음 주기에 재시도합니다.", exc)
+            finally:
+                _pipeline_running = False
 
             # 디버깅 에이전트 halt_trading 플래그 확인
             if self.debugger.halt_trading:
@@ -660,11 +671,11 @@ class Orchestrator:
 
             # 다음 실행까지 대기 (세션 모드별 주기 조정)
             if session_mode == "CLOSING":
-                wait_sec = 60  # 장 마감 정리: 1분 주기
+                wait_sec = 120  # 장 마감 정리: 2분 주기
             elif session_mode in ("PRE_ANALYSIS", "MARKET_OPEN_WAIT", "ENTRY_READY"):
                 wait_sec = 300  # 사전분석/대기: 5분 주기
             else:
-                wait_sec = interval_sec  # NORMAL: 기본 주기
+                wait_sec = max(interval_sec, 600)  # NORMAL: 최소 10분
             wait_min = wait_sec / 60
             self._logger.info("%.0f분 후 다음 실행... [세션=%s]", wait_min, session_mode)
             try:
