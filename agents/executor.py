@@ -1592,3 +1592,59 @@ class Executor(BaseAgent):
         except Exception as exc:
             self.log("warning", f"계좌 잔고 조회 실패: {exc}")
             return None
+
+    async def fetch_kis_holdings(self) -> list:
+        """
+        KIS API에서 실제 보유종목 리스트를 반환한다.
+
+        Returns: [{"code": "005930", "name": "삼성전자", "quantity": 10, "avg_price": 78000}, ...]
+        """
+        try:
+            token = await self._get_token()
+        except Exception:
+            return []
+
+        if not self._account_no:
+            return []
+
+        cano = self._account_no[:8]
+        acnt_prdt_cd = self._account_no[8:]
+
+        url = f"{_KIS_BASE_URL}/uapi/domestic-stock/v1/trading/inquire-balance"
+        headers = {
+            "authorization": f"Bearer {token}",
+            "appkey": self._app_key,
+            "appsecret": self._app_secret,
+            "tr_id": "VTTC8434R",
+            "custtype": "P",
+        }
+        params = {
+            "CANO": cano, "ACNT_PRDT_CD": acnt_prdt_cd,
+            "AFHR_FLPR_YN": "N", "OFL_YN": "", "INQR_DVSN": "02",
+            "UNPR_DVSN": "01", "FUND_STTL_ICLD_YN": "N",
+            "FNCG_AMT_AUTO_RDPT_YN": "N", "PRCS_DVSN": "00",
+            "CTX_AREA_FK100": "", "CTX_AREA_NK100": "",
+        }
+
+        loop = asyncio.get_event_loop()
+        try:
+            resp = await loop.run_in_executor(
+                None, lambda: requests.get(url, headers=headers, params=params, timeout=10)
+            )
+            data = resp.json()
+            output1 = data.get("output1", [])
+            holdings = []
+            for item in output1:
+                qty = int(item.get("hldg_qty", 0) or 0)
+                if qty <= 0:
+                    continue
+                holdings.append({
+                    "code": item.get("pdno", ""),
+                    "name": item.get("prdt_name", ""),
+                    "quantity": qty,
+                    "avg_price": float(item.get("pchs_avg_pric", 0) or 0),
+                })
+            return holdings
+        except Exception as exc:
+            self.log("warning", f"KIS 보유종목 조회 실패: {exc}")
+            return []

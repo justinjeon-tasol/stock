@@ -125,6 +125,14 @@ class Orchestrator:
                 result["direction"] = "HOLD"
 
         # -----------------------------------------------------------------
+        # Pre-check: KIS↔Supabase 포지션 동기화
+        # -----------------------------------------------------------------
+        try:
+            await self._sync_positions_with_kis()
+        except Exception as sync_exc:
+            self._logger.warning("[동기화] KIS↔Supabase 포지션 동기화 실패 (무시): %s", sync_exc)
+
+        # -----------------------------------------------------------------
         # Step 1: 데이터 수집
         # -----------------------------------------------------------------
         self._log_step("1/5", "데이터수집", "시작")
@@ -489,6 +497,90 @@ class Orchestrator:
         if 910 <= t < 930:     # 15:10~15:30
             return "CLOSING"
         return "AFTER_HOURS"   # 15:30~06:00
+
+    async def _sync_positions_with_kis(self) -> None:
+        """
+        KIS 실제 잔고와 Supabase positions를 동기화한다.
+        - KIS에 있고 Supabase에 없으면 → OPEN 포지션 생성
+        - Supabase OPEN인데 KIS에 없으면 → CLOSED 처리
+        - 수량 불일치 → KIS 기준으로 보정
+        """
+        try:
+            kis_holdings = await self.executor.fetch_kis_holdings()
+            if not kis_holdings:
+                return  # KIS 조회 실패 또는 보유종목 없음
+
+            from database.db import get_open_positions, _get_client
+
+            db_positions = get_open_positions()
+            db_codes = {p["code"]: p for p in db_positions}
+            kis_codes = {}
+
+            for h in kis_holdings:
+                code = h.get("code", "")
+                if code and h.get("quantity", 0) > 0:
+                    kis_codes[code] = h
+
+            changes = 0
+
+            # 1. KIS에 있고 Supabase에 없으면 → 포지션 생성
+            for code, kis_info in kis_codes.items():
+                if code not in db_codes:
+                    self._logger.info(
+                        "[동기화] KIS에만 존재: %s(%s) %d주 → 포지션 생성",
+                        kis_info["name"], code, kis_info["quantity"]
+                    )
+                    self.executor._position_manager.open_position(
+                        code=code,
+                        name=kis_info["name"],
+                        quantity=kis_info["quantity"],
+                        avg_price=kis_info["avg_price"],
+                        buy_order_id="SYNC_KIS",
+                        phase=self._current_phase or "일반장",
+                        mode="MOCK" if self.executor._is_mock else "REAL",
+                        holding_period="단기",
+                        signal_source="KIS_SYNC",
+                    )
+                    changes += 1
+
+            # 2. Supabase OPEN인데 KIS에 없으면 → CLOSED 처리
+            for code, db_pos in db_codes.items():
+                if code not in kis_codes:
+                    self._logger.info(
+                        "[동기화] KIS에 없음: %s(%s) → CLOSED 처리",
+                        db_pos.get("name", ""), code
+                    )
+                    self.executor._position_manager.close_position_by_id(
+                        db_pos["id"], "KIS_SYNC_CLOSED", 0.0
+                    )
+                    changes += 1
+
+            # 3. 수량 불일치 → KIS 기준으로 보정
+            for code in kis_codes:
+                if code in db_codes:
+                    kis_qty = kis_codes[code]["quantity"]
+                    db_qty = int(db_codes[code].get("quantity", 0))
+                    if kis_qty != db_qty:
+                        self._logger.info(
+                            "[동기화] 수량 불일치: %s DB=%d → KIS=%d",
+                            code, db_qty, kis_qty
+                        )
+                        try:
+                            client = _get_client()
+                            if client:
+                                client.table("positions").update({
+                                    "quantity": kis_qty,
+                                    "avg_price": kis_codes[code]["avg_price"],
+                                }).eq("id", db_codes[code]["id"]).execute()
+                                changes += 1
+                        except Exception:
+                            pass
+
+            if changes:
+                self._logger.info("[동기화] KIS↔Supabase 동기화 완료: %d건 변경", changes)
+
+        except Exception as exc:
+            self._logger.warning("[동기화] 실패: %s", exc)
 
     async def _stop_take_loop(self) -> None:
         """
