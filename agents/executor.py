@@ -462,6 +462,15 @@ class Executor(BaseAgent):
                     if pnl_pct <= -3.0:
                         self.log("warning",
                             f"[보호시간] {name}({code}) 긴급손절 발동: {pnl_pct:+.1f}%")
+                        try:
+                            await self._place_order(token, code, name, "SELL", quantity)
+                            self._position_manager.close_position(
+                                position_id, current_price, "EMERGENCY_STOP_LOSS"
+                            )
+                            closed_count += 1
+                        except Exception as exc:
+                            self.log("error", f"[보호시간] 긴급손절 주문 실패: {exc}")
+                        continue
                     else:
                         continue
 
@@ -981,8 +990,8 @@ class Executor(BaseAgent):
 
         elif trend == "PROFIT_FLAT":
             # 수익 중 + 횡보/하락 예측 → 빠르게 수익 확정
-            s1 = max(avg_price * 1.005, current_price * 1.002)
-            s2 = avg_price * 1.015
+            s1 = max(avg_price * 1.005, current_price * 0.995)
+            s2 = avg_price * 1.04
             stages = [
                 {"stage": 1, "type": "PARTIAL_TP", "trigger_price": round(s1),
                  "sell_ratio": 0.50, "sell_qty": max(1, int(quantity * 0.5)),
@@ -993,23 +1002,21 @@ class Executor(BaseAgent):
             ]
 
         elif trend == "RECOVERING":
-            # 손실 중 + 회복 가능성 → 매입가 근처에서 탈출
-            # 목표: 손실 최소화, 매입가 복귀 시 즉시 50% 매도
-            s1 = avg_price * 0.998  # 매입가 -0.2% (거의 본전)
-            s2 = avg_price * 1.005  # 매입가 +0.5%
+            # 손실 중 + 회복 가능성 → 매입가 +1% 이상에서 분할 매도
+            s1 = avg_price * 1.01   # 매입가 +1% (수익 확인 후 매도)
+            s2 = avg_price * 1.03   # 매입가 +3%
             stages = [
                 {"stage": 1, "type": "PARTIAL_TP", "trigger_price": round(s1),
                  "sell_ratio": 0.50, "sell_qty": max(1, int(quantity * 0.5)),
-                 "status": "PENDING", "rationale": f"본전 근처 탈출 ({(s1/avg_price-1)*100:.1f}%)"},
+                 "status": "PENDING", "rationale": f"수익 전환 후 탈출 ({(s1/avg_price-1)*100:.1f}%)"},
                 {"stage": 2, "type": "FINAL_TP", "trigger_price": round(s2),
                  "sell_ratio": 1.0, "sell_qty": max(1, quantity - max(1, int(quantity * 0.5))),
-                 "status": "PENDING", "rationale": f"소폭 수익 후 전량 ({(s2/avg_price-1)*100:.1f}%)"},
+                 "status": "PENDING", "rationale": f"추가 수익 후 전량 ({(s2/avg_price-1)*100:.1f}%)"},
             ]
 
         else:  # LOSS_ZONE - 예측상 매입가 회복 불가
-            # 반등 시 즉시 손실 최소화 매도
-            # 현재가 + 1% 반등이면 전량 매도 (더 큰 손실 방지)
-            s1 = max(current_price * 1.01, avg_price * 0.98)  # 현재+1% or 매입-2% 중 높은 가격
+            # 반등 시 손실 최소화 매도 — 최소 매입가 -1% 이상에서
+            s1 = max(current_price * 1.02, avg_price * 0.99)
             stages = [
                 {"stage": 1, "type": "FINAL_TP", "trigger_price": round(s1),
                  "sell_ratio": 1.0, "sell_qty": quantity,
@@ -1241,6 +1248,14 @@ class Executor(BaseAgent):
                 for t in targets:
                     code = t.get("code", "")
                     name = t.get("name", "")
+                    sector = t.get("sector", "")
+
+                    # 섹터 감쇠 적용
+                    held_sectors = [p.get("sector", "") for p in self._position_manager.get_open_positions()]
+                    dampen = self._risk_manager.get_sector_dampen_factor(sector, held_sectors)
+                    adjusted_budget = per_stock_budget * dampen
+                    if dampen < 1.0:
+                        self.log("info", f"{name}({code}) 섹터 감쇠 적용: {dampen:.1f}x → 예산 {adjusted_budget:,.0f}원")
 
                     # 중복 보유 방지
                     if self._position_manager.is_already_held(code):
@@ -1269,7 +1284,7 @@ class Executor(BaseAgent):
                         if _cooldown_client:
                             recent_sell = (
                                 _cooldown_client.table("trades")
-                                .select("price,created_at")
+                                .select("price,created_at,result_pct")
                                 .eq("code", code)
                                 .eq("action", "SELL")
                                 .order("created_at", desc=True)
@@ -1284,13 +1299,15 @@ class Executor(BaseAgent):
                                 hours_since_sell = (
                                     datetime.now(timezone.utc) - sell_time
                                 ).total_seconds() / 3600
-                                if hours_since_sell < 1.0:
+                                last_result_pct = float(last_sell.get("result_pct", 0) or 0)
+                                cooldown_hours = 4.0 if last_result_pct < 0 else 1.0
+                                if hours_since_sell < cooldown_hours:
                                     self.log("info",
-                                        f"{name}({code}) 매도 후 {hours_since_sell:.0f}분 → 쿨다운 SKIP")
+                                        f"{name}({code}) 매도 후 {hours_since_sell*60:.0f}분 → 쿨다운 {cooldown_hours}h SKIP")
                                     results.append({
                                         "code": code, "name": name,
                                         "status": "SKIP", "order_no": "",
-                                        "message": f"재매수 쿨다운 ({hours_since_sell*60:.0f}분)",
+                                        "message": f"재매수 쿨다운 {cooldown_hours}h ({hours_since_sell*60:.0f}분 경과)",
                                     })
                                     continue
 
@@ -1325,8 +1342,8 @@ class Executor(BaseAgent):
                     current_price_for_qty = await self._position_manager.fetch_current_price(
                         token, code
                     )
-                    if current_price_for_qty and current_price_for_qty > 0 and per_stock_budget > 0:
-                        total_quantity = max(1, int(per_stock_budget / current_price_for_qty))
+                    if current_price_for_qty and current_price_for_qty > 0 and adjusted_budget > 0:
+                        total_quantity = max(1, int(adjusted_budget / current_price_for_qty))
                     else:
                         total_quantity = 1
                         self.log("warning", f"{name}({code}) 현재가 조회 실패 → 1주 주문")

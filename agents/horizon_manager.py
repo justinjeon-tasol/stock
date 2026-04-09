@@ -14,6 +14,8 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta, timezone
+
+KST = timezone(timedelta(hours=9))
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -133,7 +135,7 @@ class HorizonManager:
         EXIT_* 상수 문자열 또는 None (청산 불필요)
         """
         if current_dt is None:
-            current_dt = datetime.now(timezone.utc)
+            current_dt = datetime.now(KST)
 
         holding_period = position.get("holding_period", "단기")
         avg_price      = float(position.get("avg_price", 0))
@@ -167,11 +169,12 @@ class HorizonManager:
             if peak_pnl >= activate_pct and drawdown_from_peak <= -trailing_pct:
                 return EXIT_TRAILING_STOP
 
-        # 4. 시간 청산 (초단기: 장 마감 전 강제)
+        # 4. 시간 청산 (초단기: 장 마감 전 강제, KST 기준)
         if holding_period == "초단기":
             time_exit_str = p.get("time_exit", "15:20")
             hh, mm = int(time_exit_str[:2]), int(time_exit_str[3:])
-            if current_dt.hour > hh or (current_dt.hour == hh and current_dt.minute >= mm):
+            local_dt = current_dt.astimezone(KST) if current_dt.tzinfo else current_dt
+            if local_dt.hour > hh or (local_dt.hour == hh and local_dt.minute >= mm):
                 return EXIT_TIME_EXIT
 
         # 5. 최대 보유일 초과

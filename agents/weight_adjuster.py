@@ -471,6 +471,19 @@ class WeightAdjuster(BaseAgent):
         )
         if signal_candidates:
             self.log("info", f"시그널 매트릭스 기반 종목 {len(signal_candidates)}개 선정")
+
+            # 최소 필터: 칼만 하향 이탈 종목 제외
+            if kalman_signals:
+                before = len(signal_candidates)
+                signal_candidates = [
+                    c for c in signal_candidates
+                    if kalman_signals.get(c["code"], {}).get("trend") != "DOWN"
+                    or kalman_signals.get(c["code"], {}).get("price_above_kalman", True)
+                ]
+                filtered = before - len(signal_candidates)
+                if filtered > 0:
+                    self.log("info", f"시그널 매트릭스: 칼만 하향 {filtered}개 제외")
+
             # 시그널 기반 후보를 기존 파이프라인(Step 8: 보유 중 제외 ~ 정규화)에 합류
             candidates = signal_candidates
             # Step 8 이후로 직접 점프 (테마/RS/외국인 부스트는 이미 백테스팅에서 반영됨)

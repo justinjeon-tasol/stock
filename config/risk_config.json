@@ -50,8 +50,8 @@
   "partial_take_profit": {
     "enabled": true,
     "levels": [
-      {"pnl_pct": 1.5, "sell_ratio": 0.3},
-      {"pnl_pct": 3.0, "sell_ratio": 0.3}
+      {"pnl_pct": 3.0, "sell_ratio": 0.3},
+      {"pnl_pct": 7.0, "sell_ratio": 0.3}
     ],
     "remaining_strategy": "trailing_stop",
     "description": "+1.5%에서 30% 매도, +3%에서 30% 매도, 나머지는 기존 트레일링/TP 따름"

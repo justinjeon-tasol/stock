@@ -100,8 +100,9 @@ class RiskManager:
         except Exception:
             realized_pnl = 0.0
 
-        # 2. OPEN 포지션 미실현 손익 (mark-to-market)
+        # 2. OPEN 포지션 미실현 손익 (mark-to-market, 가중 평균)
         unrealized_pnl = 0.0
+        total_position_value = 0.0
         try:
             from database.db import get_open_positions_for_mtm
             positions = get_open_positions_for_mtm()
@@ -115,8 +116,14 @@ class RiskManager:
                 cur = float(current_prices.get(code, 0))
                 if cur <= 0:
                     continue  # 현재가 없으면 해당 포지션은 skip (보수적)
+                position_value = avg * qty  # 포지션 평가금액
                 pos_pnl_pct = (cur - avg) / avg * 100
-                unrealized_pnl += pos_pnl_pct
+                unrealized_pnl += pos_pnl_pct * position_value  # 가중 합산
+                total_position_value += position_value
+            if total_position_value > 0:
+                unrealized_pnl = unrealized_pnl / total_position_value  # 가중 평균
+            else:
+                unrealized_pnl = 0.0
         except Exception:
             unrealized_pnl = 0.0
 

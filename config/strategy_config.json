@@ -130,7 +130,7 @@
   },
   "leading_indicator_mapping": {
     "nasdaq_surge": {
-      "threshold_pct": 1.5,
+      "threshold_pct": 2.5,
       "kr_sectors": [
         "지수ETF"
       ],
@@ -138,7 +138,7 @@
       "kr_themes": []
     },
     "sox_surge": {
-      "threshold_pct": 2,
+      "threshold_pct": 3.0,
       "kr_sectors": [
         "반도체"
       ],
@@ -185,7 +185,7 @@
       "kr_themes": []
     },
     "gold_strong": {
-      "threshold_pct": 1.5,
+      "threshold_pct": 2.5,
       "kr_sectors": [],
       "direction": "AVOID",
       "kr_themes": []
@@ -203,15 +203,16 @@
       "kr_themes": []
     },
     "copper_strong": {
-      "threshold_pct": 2,
+      "threshold_pct": 3.0,
       "kr_sectors": [
-        "전반"
+        "자동차",
+        "정유"
       ],
       "direction": "BUY",
       "kr_themes": []
     },
     "nasdaq_crash": {
-      "threshold_pct": -2.0,
+      "threshold_pct": -1.5,
       "kr_sectors": [
         "지수ETF"
       ],
@@ -219,7 +220,7 @@
       "kr_themes": []
     },
     "sox_crash": {
-      "threshold_pct": -3.0,
+      "threshold_pct": -2.5,
       "kr_sectors": [
         "반도체"
       ],
@@ -230,7 +231,7 @@
       ]
     },
     "tesla_crash": {
-      "threshold_pct": -3.0,
+      "threshold_pct": -2.5,
       "kr_sectors": [
         "2차전지"
       ],
