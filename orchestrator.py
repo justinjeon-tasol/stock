@@ -503,12 +503,14 @@ class Orchestrator:
         KIS 실제 잔고와 Supabase positions를 동기화한다.
         - KIS에 있고 Supabase에 없으면 → OPEN 포지션 생성
         - Supabase OPEN인데 KIS에 없으면 → CLOSED 처리
-        - 수량 불일치 → KIS 기준으로 보정
+        - 수량/매입가 불일치 → KIS 기준으로 보정
+        모든 변경 사항을 agent_logs에 기록한다.
         """
         try:
             kis_holdings = await self.executor.fetch_kis_holdings()
             if not kis_holdings:
-                return  # KIS 조회 실패 또는 보유종목 없음
+                save_agent_log("OR", "WARNING", "[동기화] KIS 보유종목 조회 실패 또는 0건")
+                return
 
             from database.db import get_open_positions, _get_client
 
@@ -523,13 +525,15 @@ class Orchestrator:
 
             changes = 0
 
+            save_agent_log("OR", "INFO",
+                f"[동기화] 시작: KIS {len(kis_codes)}종목, DB {len(db_codes)}종목")
+
             # 1. KIS에 있고 Supabase에 없으면 → 포지션 생성
             for code, kis_info in kis_codes.items():
                 if code not in db_codes:
-                    self._logger.info(
-                        "[동기화] KIS에만 존재: %s(%s) %d주 → 포지션 생성",
-                        kis_info["name"], code, kis_info["quantity"]
-                    )
+                    msg = f"[동기화] KIS에만 존재: {kis_info['name']}({code}) {kis_info['quantity']}주 @ {kis_info['avg_price']:,.0f}원 → 포지션 생성"
+                    self._logger.info(msg)
+                    save_agent_log("OR", "WARNING", msg)
                     self.executor._position_manager.open_position(
                         code=code,
                         name=kis_info["name"],
@@ -546,41 +550,49 @@ class Orchestrator:
             # 2. Supabase OPEN인데 KIS에 없으면 → CLOSED 처리
             for code, db_pos in db_codes.items():
                 if code not in kis_codes:
-                    self._logger.info(
-                        "[동기화] KIS에 없음: %s(%s) → CLOSED 처리",
-                        db_pos.get("name", ""), code
-                    )
+                    msg = f"[동기화] KIS에 없음: {db_pos.get('name', '')}({code}) → CLOSED 처리"
+                    self._logger.info(msg)
+                    save_agent_log("OR", "WARNING", msg)
                     self.executor._position_manager.close_position_by_id(
                         db_pos["id"], "KIS_SYNC_CLOSED", 0.0
                     )
                     changes += 1
 
-            # 3. 수량 불일치 → KIS 기준으로 보정
+            # 3. 수량 또는 매입가 불일치 → KIS 기준으로 보정
             for code in kis_codes:
                 if code in db_codes:
                     kis_qty = kis_codes[code]["quantity"]
+                    kis_avg = kis_codes[code]["avg_price"]
                     db_qty = int(db_codes[code].get("quantity", 0))
-                    if kis_qty != db_qty:
-                        self._logger.info(
-                            "[동기화] 수량 불일치: %s DB=%d → KIS=%d",
-                            code, db_qty, kis_qty
-                        )
+                    db_avg = float(db_codes[code].get("avg_price", 0))
+                    qty_mismatch = kis_qty != db_qty
+                    avg_mismatch = abs(kis_avg - db_avg) > 1  # 1원 이상 차이
+                    if qty_mismatch or avg_mismatch:
+                        msg = f"[동기화] 불일치: {code} DB={db_qty}주/{db_avg:,.0f}원 → KIS={kis_qty}주/{kis_avg:,.0f}원"
+                        self._logger.info(msg)
+                        save_agent_log("OR", "INFO", msg)
                         try:
                             client = _get_client()
                             if client:
                                 client.table("positions").update({
                                     "quantity": kis_qty,
-                                    "avg_price": kis_codes[code]["avg_price"],
+                                    "avg_price": kis_avg,
                                 }).eq("id", db_codes[code]["id"]).execute()
                                 changes += 1
                         except Exception:
                             pass
 
             if changes:
-                self._logger.info("[동기화] KIS↔Supabase 동기화 완료: %d건 변경", changes)
+                msg = f"[동기화] KIS↔Supabase 동기화 완료: {changes}건 변경"
+                self._logger.info(msg)
+                save_agent_log("OR", "INFO", msg)
+            else:
+                save_agent_log("OR", "INFO", "[동기화] KIS↔DB 일치 — 변경 없음")
 
         except Exception as exc:
-            self._logger.warning("[동기화] 실패: %s", exc)
+            msg = f"[동기화] 실패: {exc}"
+            self._logger.warning(msg)
+            save_agent_log("OR", "ERROR", msg)
 
     async def _stop_take_loop(self) -> None:
         """
