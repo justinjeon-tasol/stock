@@ -293,12 +293,110 @@ class Executor(BaseAgent):
         rt_cd = data.get("rt_cd", "")
         if rt_cd == "0":
             order_no = data.get("output", {}).get("ODNO", "")
-            self.log("info", f"{name}({code}) {action} 주문 성공 — 주문번호: {order_no}")
-            return {"status": "OK", "order_no": order_no, "message": "주문 성공"}
+            self.log("info", f"{name}({code}) {action} 주문 접수 — 주문번호: {order_no}")
+
+            # 체결 확인
+            confirmed = await self._confirm_execution(token, order_no, code, name, qty)
+            if confirmed:
+                filled_qty = confirmed.get("filled_qty", qty)
+                filled_price = confirmed.get("filled_price", 0)
+                self.log("info",
+                    f"{name}({code}) {action} 체결 확인: {filled_qty}주 @ {filled_price:,.0f}원")
+                return {
+                    "status": "OK", "order_no": order_no,
+                    "message": "체결 완료",
+                    "filled_qty": filled_qty,
+                    "filled_price": filled_price,
+                }
+            else:
+                self.log("warning", f"{name}({code}) {action} 미체결 — 주문번호: {order_no}")
+                return {"status": "UNFILLED", "order_no": order_no, "message": "주문 접수됨, 미체결"}
         else:
             msg = data.get("msg1", "알 수 없는 오류")
             self.log("error", f"{name}({code}) {action} 주문 실패: {msg}")
             return {"status": "ERROR", "order_no": "", "message": msg}
+
+    async def _confirm_execution(
+        self,
+        token: str,
+        order_no: str,
+        code: str,
+        name: str,
+        expected_qty: int,
+        max_retries: int = 5,
+        interval_sec: float = 1.0,
+    ) -> Optional[dict]:
+        """
+        KIS 체결 조회 API로 주문 체결 여부를 확인한다.
+        최대 max_retries회 폴링하여 체결을 확인한다.
+
+        Returns:
+            {"filled_qty": int, "filled_price": float} | None (미체결)
+        """
+        if not self._account_no or not order_no:
+            return None
+
+        cano = self._account_no[:8]
+        acnt_prdt_cd = self._account_no[8:]
+        tr_id = "VTTC8001R" if self._is_mock else "TTTC8001R"
+
+        from datetime import date as _date
+        today_str = _date.today().strftime("%Y%m%d")
+
+        url = f"{_KIS_BASE_URL}/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
+        headers = {
+            "Content-Type": "application/json; charset=utf-8",
+            "authorization": f"Bearer {token}",
+            "appkey":        self._app_key,
+            "appsecret":     self._app_secret,
+            "tr_id":         tr_id,
+            "custtype":      "P",
+        }
+        params = {
+            "CANO":            cano,
+            "ACNT_PRDT_CD":    acnt_prdt_cd,
+            "INQR_STRT_DT":   today_str,
+            "INQR_END_DT":    today_str,
+            "SLL_BUY_DVSN_CD": "00",
+            "INQR_DVSN":      "00",
+            "PDNO":            code,
+            "CCLD_DVSN":       "01",  # 체결만
+            "ORD_GNO_BRNO":    "",
+            "ODNO":            order_no,
+            "INQR_DVSN_3":    "00",
+            "INQR_DVSN_1":    "",
+            "CTX_AREA_FK100":  "",
+            "CTX_AREA_NK100":  "",
+        }
+
+        loop = asyncio.get_event_loop()
+
+        for attempt in range(max_retries):
+            if attempt > 0:
+                await asyncio.sleep(interval_sec)
+
+            try:
+                def _req() -> requests.Response:
+                    return requests.get(url, headers=headers, params=params, timeout=10)
+
+                resp = await loop.run_in_executor(None, _req)
+                data = resp.json()
+
+                if data.get("rt_cd") != "0":
+                    continue
+
+                for item in (data.get("output1") or []):
+                    odno = item.get("odno", "")
+                    if odno != order_no:
+                        continue
+                    filled_qty = int(item.get("tot_ccld_qty", "0") or "0")
+                    filled_price = float(item.get("avg_prvs", "0") or "0")
+                    if filled_qty > 0:
+                        return {"filled_qty": filled_qty, "filled_price": filled_price}
+            except Exception as exc:
+                self.log("debug", f"[체결확인] {name}({code}) 조회 실패 (재시도 {attempt+1}): {exc}")
+
+        return None
 
     # ------------------------------------------------------------------
     # 텔레그램 알림
@@ -464,17 +562,19 @@ class Executor(BaseAgent):
                             f"[보호시간] {name}({code}) 긴급손절 발동: {pnl_pct:+.1f}%")
                         try:
                             sell_order = await self._place_order(token, code, name, "SELL", quantity)
-                            result_pct = self._position_manager.calculate_result_pct(avg_price, current_price)
-                            self._position_manager.close_position(
-                                position_id, current_price, "EMERGENCY_STOP_LOSS"
-                            )
                             if sell_order.get("status") == "OK":
+                                filled_price = sell_order.get("filled_price", current_price)
+                                filled_qty = sell_order.get("filled_qty", quantity)
+                                result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
+                                self._position_manager.close_position(
+                                    position_id, filled_price, "EMERGENCY_STOP_LOSS"
+                                )
                                 save_trade(
                                     {"order_id": sell_order.get("order_no", ""), "action": "SELL",
                                      "results": [{
                                          "code": code, "name": name, "status": "OK",
                                          "order_no": sell_order.get("order_no", ""),
-                                         "quantity": quantity, "price": int(current_price),
+                                         "quantity": filled_qty, "price": int(filled_price),
                                          "strategy_id": pos.get("strategy_id"),
                                          "result_pct": result_pct,
                                      }],
@@ -482,7 +582,9 @@ class Executor(BaseAgent):
                                     {"phase": current_phase, "strategy_id": pos.get("strategy_id"),
                                      "sell_reason": "EMERGENCY_STOP_LOSS"},
                                 )
-                            closed_count += 1
+                                closed_count += 1
+                            else:
+                                self.log("warning", f"[보호시간] {name}({code}) 긴급손절 미체결: {sell_order.get('message')}")
                         except Exception as exc:
                             self.log("error", f"[보호시간] 긴급손절 주문 실패: {exc}")
                         continue
@@ -557,7 +659,9 @@ class Executor(BaseAgent):
                     continue
 
                 if sell_order.get("status") == "OK":
-                    result_pct = self._position_manager.calculate_result_pct(avg_price, current_price)
+                    filled_price = sell_order.get("filled_price", current_price)
+                    filled_qty = sell_order.get("filled_qty", quantity)
+                    result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
                     self._position_manager.close_position_by_id(position_id, exit_reason, result_pct)
                     # SELL trades 레코드 생성
                     save_trade(
@@ -565,7 +669,7 @@ class Executor(BaseAgent):
                          "results": [{
                              "code": code, "name": name, "status": "OK",
                              "order_no": sell_order.get("order_no", ""),
-                             "quantity": quantity, "price": int(current_price),
+                             "quantity": filled_qty, "price": int(filled_price),
                              "strategy_id": pos.get("strategy_id"),
                              "result_pct": result_pct,
                          }],
@@ -667,11 +771,13 @@ class Executor(BaseAgent):
 
                 if order_result.get("status") == "OK":
                     update_pending_dca_status(dca_id, "EXECUTED")
-                    # 포지션 수량/평균가 업데이트
-                    self._update_position_after_dca(position_id, quantity, current_price)
+                    filled_price = order_result.get("filled_price", current_price)
+                    filled_qty = order_result.get("filled_qty", quantity)
+                    # 포지션 수량/평균가 업데이트 (체결가 기준)
+                    self._update_position_after_dca(position_id, filled_qty, filled_price)
                     self.log(
                         "info",
-                        f"[DCA] {name}({code}) 2차 매수 완료: {quantity}주 @ {current_price:,.0f}원",
+                        f"[DCA] {name}({code}) 2차 매수 체결: {filled_qty}주 @ {filled_price:,.0f}원",
                     )
                     # 텔레그램 알림
                     await self._send_telegram(
@@ -772,19 +878,29 @@ class Executor(BaseAgent):
             return False
 
         if sell_order.get("status") != "OK":
-            self.log("warning", f"[분할익절] {name}({code}) 매도 주문 실패: {sell_order.get('message', '')}")
+            self.log("warning", f"[분할익절] {name}({code}) 매도 미체결: {sell_order.get('message', '')}")
             return False
 
-        # DB 업데이트: 수량 감소 + partial_tp_stage 증가
+        # 체결가 기준으로 DB 업데이트
+        filled_price = sell_order.get("filled_price", current_price)
+        filled_qty = sell_order.get("filled_qty", sell_qty)
+        actual_remaining = quantity - filled_qty
+
         new_stage = current_stage + 1
-        self._update_position_partial_sell(position_id, remaining, new_stage)
+        if actual_remaining > 0:
+            self._update_position_partial_sell(position_id, actual_remaining, new_stage)
+        else:
+            self._position_manager.close_position_by_id(
+                position_id, f"PARTIAL_TP_STAGE_{new_stage}",
+                self._position_manager.calculate_result_pct(avg_price, filled_price)
+            )
 
         # trade 저장
-        result_pct = self._position_manager.calculate_result_pct(avg_price, current_price)
+        result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
         r = {
             "code": code, "name": name, "status": "OK",
             "order_no": sell_order.get("order_no", ""),
-            "quantity": sell_qty, "price": int(current_price),
+            "quantity": filled_qty, "price": int(filled_price),
             "strategy_id": position.get("strategy_id"),
             "result_pct": result_pct,
         }
@@ -799,8 +915,8 @@ class Executor(BaseAgent):
         await self._send_telegram(
             f"[분할 익절 {new_stage}차]\n"
             f"{name}({code})\n"
-            f"{sell_qty}주 매도 @ {current_price:,.0f}원\n"
-            f"수익률: {pnl_pct:+.2f}%\n"
+            f"{filled_qty}주 매도 @ {filled_price:,.0f}원\n"
+            f"수익률: {result_pct:+.2f}%\n"
             f"잔여: {remaining}주"
         )
 
@@ -886,19 +1002,23 @@ class Executor(BaseAgent):
                 return False
 
             if sell_order.get("status") != "OK":
+                self.log("warning", f"[EXIT_PLAN] {name}({code}) 미체결: {sell_order.get('message', '')}")
                 return False
+
+            filled_price = sell_order.get("filled_price", current_price)
+            filled_qty = sell_order.get("filled_qty", sell_qty)
+            actual_remaining = quantity - filled_qty
 
             # 단계 상태 업데이트
             stages[i]["status"] = "EXECUTED"
-            stages[i]["executed_price"] = current_price
+            stages[i]["executed_price"] = filled_price
             update_exit_plan_stage(position_id, stages, version + 1)
 
             # 포지션 업데이트
-            if remaining <= 0:
+            avg_price_val = float(pos.get("avg_price", 0))
+            result_pct = self._position_manager.calculate_result_pct(avg_price_val, filled_price)
+            if actual_remaining <= 0:
                 # 전량 매도 → 포지션 종료
-                result_pct = self._position_manager.calculate_result_pct(
-                    float(pos.get("avg_price", 0)), current_price
-                )
                 self._position_manager.close_position_by_id(
                     position_id, f"EXIT_PLAN_STAGE_{i+1}", result_pct
                 )
@@ -906,18 +1026,15 @@ class Executor(BaseAgent):
                 from database.db import delete_exit_plan
                 delete_exit_plan(position_id)
             else:
-                self._update_position_partial_sell(position_id, remaining, 0)
+                self._update_position_partial_sell(position_id, actual_remaining, 0)
 
             # trade 저장
-            result_pct = self._position_manager.calculate_result_pct(
-                float(pos.get("avg_price", 0)), current_price
-            )
             save_trade(
                 {"order_id": sell_order.get("order_no", ""), "action": "SELL",
                  "results": [{
                      "code": code, "name": name, "status": "OK",
                      "order_no": sell_order.get("order_no", ""),
-                     "quantity": sell_qty, "price": int(current_price),
+                     "quantity": filled_qty, "price": int(filled_price),
                      "strategy_id": pos.get("strategy_id"),
                      "result_pct": result_pct,
                  }],
@@ -928,7 +1045,7 @@ class Executor(BaseAgent):
 
             await self._send_telegram(
                 f"[EXIT_PLAN 매도]\n{name}({code})\n"
-                f"stage {i+1}: {sell_qty}주 @ {current_price:,.0f}원\n"
+                f"stage {i+1}: {filled_qty}주 @ {filled_price:,.0f}원\n"
                 f"수익률: {result_pct:+.2f}%\n"
                 f"잔여: {remaining}주"
             )
@@ -1190,15 +1307,16 @@ class Executor(BaseAgent):
 
                 result_pct = 0.0
                 if sell_order.get("status") == "OK":
-                    sell_price = current_price or avg_price
-                    result_pct = self._position_manager.calculate_result_pct(avg_price, sell_price)
+                    filled_price = sell_order.get("filled_price", current_price or avg_price)
+                    filled_qty = sell_order.get("filled_qty", sell_qty)
+                    result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
                     if position_id:
                         if sell_reason == "REDUCE_POSITION":
                             # 분할 축소: 포지션 OPEN 유지, 수량만 감소
                             pos_record = self._position_manager.get_position_by_code(code)
                             if pos_record:
                                 total_qty = int(pos_record.get("quantity", 0))
-                                remaining = total_qty - sell_qty
+                                remaining = total_qty - filled_qty
                                 if remaining > 0:
                                     self._update_position_partial_sell(position_id, remaining, 0)
                                 else:
@@ -1215,7 +1333,7 @@ class Executor(BaseAgent):
                             )
                     self.log(
                         "info",
-                        f"SELL 완료: {name}({code}) {sell_qty}주 {result_pct:+.2f}% [{sell_reason}]",
+                        f"SELL 체결: {name}({code}) {filled_qty}주 @ {filled_price:,.0f}원 {result_pct:+.2f}% [{sell_reason}]",
                     )
                     sell_r = {
                         "code":       code,
@@ -1223,8 +1341,8 @@ class Executor(BaseAgent):
                         "status":     "OK",
                         "order_no":   sell_order.get("order_no", ""),
                         "message":    "",
-                        "quantity":   sell_qty,
-                        "price":      int(sell_price),
+                        "quantity":   filled_qty,
+                        "price":      int(filled_price),
                         "strategy_id": strategy_id,
                         "result_pct": result_pct,
                     }
@@ -1421,11 +1539,12 @@ class Executor(BaseAgent):
                     }
                     results.append(r)
 
-                    # BUY 성공 시 포지션 오픈 + 현재가로 avg_price 업데이트
+                    # BUY 체결 확인 후 포지션 오픈 (체결가 기준)
                     if r["status"] == "OK":
-                        avg_price = current_price_for_qty or 0.0
+                        avg_price = order_result.get("filled_price", current_price_for_qty or 0.0)
+                        filled_qty = order_result.get("filled_qty", buy_quantity)
                         # trades 저장 후 position 연결
-                        r["quantity"]    = buy_quantity
+                        r["quantity"]    = filled_qty
                         r["price"]       = int(avg_price)
                         r["strategy_id"] = strategy_id
                         trade_payload = {
@@ -1447,7 +1566,7 @@ class Executor(BaseAgent):
                         self._position_manager.open_position(
                             code=code,
                             name=name,
-                            quantity=buy_quantity,
+                            quantity=filled_qty,
                             avg_price=avg_price,
                             buy_order_id=r["order_no"],
                             buy_trade_id=trade_id,
@@ -1460,6 +1579,7 @@ class Executor(BaseAgent):
                         )
 
                         # DCA 2차 매수 대기 등록
+                        dca_remaining_qty = total_quantity - filled_qty
                         if dca_remaining_qty > 0 and avg_price > 0:
                             target_price = avg_price * (1 + self._dca_pullback_pct / 100.0)
                             expires_dt = (
