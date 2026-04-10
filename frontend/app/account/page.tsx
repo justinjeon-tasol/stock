@@ -4,14 +4,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, ChevronDown, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAccountSummary } from '@/hooks/useAccountSummary'
-import { useKISBalance } from '@/hooks/useKISBalance'
+import { usePositions } from '@/hooks/usePositions'
 import { DataSourceBadge } from '@/components/account/DataSourceBadge'
-import { KISBalanceSummary } from '@/components/account/KISBalanceSummary'
-import { KISHoldingsTable } from '@/components/account/KISHoldingsTable'
 import { KISTradeHistory } from '@/components/account/KISTradeHistory'
 import { InvestmentAnalysis } from '@/components/account/InvestmentAnalysis'
-import { formatKRW } from '@/lib/format'
-import type { Trade } from '@/lib/types'
+import { formatKRW, formatPrice, formatPct } from '@/lib/format'
+import type { Trade, Position } from '@/lib/types'
 import type { DataSource } from '@/lib/kis-types'
 
 type TabType = 'balance' | 'history' | 'analysis'
@@ -33,14 +31,35 @@ export default function AccountPage() {
   const [tab, setTab] = useState<TabType>('balance')
   const [historyView, setHistoryView] = useState<HistoryView>('kis')
 
-  // KIS 실시간 (primary)
-  const { data: kisData, loading: kisLoading, error: kisError, refetch: refetchKIS } = useKISBalance()
-  // Supabase 폴백
+  // DB 기반 (primary)
   const { summary: sbSummary, loading: sbLoading, refetch: refetchSB } = useAccountSummary()
+  const { positions, refetch: refetchPositions } = usePositions({ status: 'OPEN' })
+  const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({})
+  const [priceLoading, setPriceLoading] = useState(false)
 
-  // 데이터 소스 결정
-  const hasKIS = !!kisData && !kisError
-  const dataSource: DataSource = hasKIS ? 'KIS' : sbSummary ? 'KIS_FALLBACK' : 'SUPABASE'
+  const dataSource: DataSource = sbSummary ? 'SUPABASE' : 'SUPABASE'
+
+  // 현재 시세 조회 (참고용)
+  const fetchPrices = useCallback(async () => {
+    if (positions.length === 0) return
+    setPriceLoading(true)
+    const prices: Record<string, number> = {}
+    for (const pos of positions) {
+      try {
+        const resp = await fetch(`/api/kis/price?code=${pos.code}`)
+        if (resp.ok) {
+          const data = await resp.json()
+          if (data.price > 0) prices[pos.code] = data.price
+        }
+      } catch { /* ignore */ }
+    }
+    setCurrentPrices(prices)
+    setPriceLoading(false)
+  }, [positions])
+
+  useEffect(() => {
+    if (positions.length > 0) fetchPrices()
+  }, [positions.length, fetchPrices])
 
   // History tab (일별 요약)
   const [history, setHistory] = useState<AccountHistory[]>([])
@@ -75,12 +94,13 @@ export default function AccountPage() {
   }, [tab, historyView, days, fetchHistory])
 
   const handleRefresh = useCallback(() => {
-    refetchKIS()
     refetchSB()
+    refetchPositions()
+    fetchPrices()
     if (tab === 'history' && historyView === 'daily') fetchHistory()
-  }, [refetchKIS, refetchSB, tab, historyView, fetchHistory])
+  }, [refetchSB, refetchPositions, fetchPrices, tab, historyView, fetchHistory])
 
-  const loading = kisLoading || sbLoading
+  const loading = sbLoading || priceLoading
 
   return (
     <div className="space-y-6">
@@ -88,7 +108,7 @@ export default function AccountPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-semibold text-[#f0f0f8]">계좌내역</h1>
-          <DataSourceBadge source={dataSource} fetchedAt={kisData?.fetchedAt} />
+          <DataSourceBadge source={dataSource} fetchedAt={sbSummary?.created_at} />
         </div>
         <button
           onClick={handleRefresh}
@@ -122,47 +142,82 @@ export default function AccountPage() {
       {/* ─── 계좌잔고 탭 ─── */}
       {tab === 'balance' && (
         <>
-          {kisError && !sbSummary && (
-            <p className="text-xs text-yellow-400 bg-yellow-400/10 px-3 py-2 rounded">
-              KIS 조회 실패: {kisError}
-            </p>
-          )}
-
-          {/* KIS 실시간 잔고 요약 */}
-          {hasKIS ? (
-            <div className="bg-[#13131a] border border-[#2a2a38] rounded-lg p-4">
-              <KISBalanceSummary summary={kisData.summary} />
-            </div>
-          ) : sbSummary ? (
-            /* Supabase 폴백 */
-            <div className="bg-[#13131a] border border-[#2a2a38] rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <tbody>
-                  <tr className="border-b border-[#2a2a38]">
-                    <SummaryCell label="예수금(현금)" value={formatKRW(sbSummary.cash_amt)} />
-                    <SummaryCell label="유가평가액" value={formatKRW(sbSummary.stock_evlu_amt)} />
-                    <SummaryCell label="총평가금액" value={formatKRW(sbSummary.tot_evlu_amt)} highlight />
-                  </tr>
-                  <tr>
-                    <SummaryCell label="매입금액" value={formatKRW(sbSummary.pchs_amt)} />
-                    <SummaryCell label="평가손익" value={formatKRW(sbSummary.evlu_pfls_amt)} colored={sbSummary.evlu_pfls_amt} />
-                    <SummaryCell label="수익률" value={`${sbSummary.erng_rt >= 0 ? '+' : ''}${sbSummary.erng_rt.toFixed(2)}%`} colored={sbSummary.erng_rt} />
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          ) : loading ? (
+          {/* 잔고 요약 (DB 기반 + 현재 시세) */}
+          {sbSummary ? (() => {
+            const pchsAmt = positions.reduce((s, p) => s + p.avg_price * p.quantity, 0)
+            const stockEvluAmt = positions.reduce((s, p) => {
+              const cur = currentPrices[p.code] ?? p.avg_price
+              return s + cur * p.quantity
+            }, 0)
+            const evluPflsAmt = stockEvluAmt - pchsAmt
+            const erngRt = pchsAmt > 0 ? (evluPflsAmt / pchsAmt) * 100 : 0
+            return (
+              <div className="bg-[#13131a] border border-[#2a2a38] rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <tbody>
+                    <tr className="border-b border-[#2a2a38]">
+                      <SummaryCell label="예수금(현금)" value={formatKRW(sbSummary.cash_amt)} />
+                      <SummaryCell label="유가평가액" value={formatKRW(stockEvluAmt)} />
+                      <SummaryCell label="총평가금액" value={formatKRW(sbSummary.cash_amt + stockEvluAmt)} highlight />
+                    </tr>
+                    <tr>
+                      <SummaryCell label="매입금액" value={formatKRW(pchsAmt)} />
+                      <SummaryCell label="평가손익" value={formatKRW(evluPflsAmt)} colored={evluPflsAmt} />
+                      <SummaryCell label="수익률" value={`${erngRt >= 0 ? '+' : ''}${erngRt.toFixed(2)}%`} colored={erngRt} />
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )
+          })() : loading ? (
             <div className="text-center py-8 text-[#555570] text-sm">로드 중...</div>
           ) : null}
 
-          {/* 보유종목 테이블 */}
+          {/* 보유종목 테이블 (DB positions 기반 + 현재 시세) */}
           <div className="bg-[#13131a] border border-[#2a2a38] rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-[#8888a8] uppercase tracking-wider mb-3">보유 종목</h3>
-            {hasKIS ? (
-              <KISHoldingsTable holdings={kisData.holdings} summary={kisData.summary} />
+            <h3 className="text-sm font-semibold text-[#8888a8] uppercase tracking-wider mb-3">
+              보유 종목 ({positions.length}개)
+            </h3>
+            {positions.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#2a2a38]">
+                      {['종목', '수량', '매입가', '현재가', '평가손익', '수익률'].map((h) => (
+                        <th key={h} className="text-left text-xs text-[#555570] font-medium py-2 px-3">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {positions.map((p) => {
+                      const cur = currentPrices[p.code] ?? null
+                      const pnlAmt = cur ? (cur - p.avg_price) * p.quantity : 0
+                      const pnlPct = cur && p.avg_price > 0 ? ((cur - p.avg_price) / p.avg_price) * 100 : 0
+                      const pnlColor = pnlAmt >= 0 ? '#4ade80' : '#f87171'
+                      return (
+                        <tr key={p.id} className="border-b border-[#1e1e2a]">
+                          <td className="py-2.5 px-3">
+                            <div className="text-[#f0f0f8] font-medium">{p.name}</div>
+                            <div className="text-xs text-[#555570]">{p.code}</div>
+                          </td>
+                          <td className="py-2.5 px-3 text-[#f0f0f8]">{p.quantity}주</td>
+                          <td className="py-2.5 px-3 font-mono text-[#8888a8]">{formatPrice(p.avg_price)}</td>
+                          <td className="py-2.5 px-3 font-mono text-[#f0f0f8]">{cur ? formatPrice(cur) : '-'}</td>
+                          <td className="py-2.5 px-3 font-mono" style={{ color: cur ? pnlColor : '#555570' }}>
+                            {cur ? `${pnlAmt >= 0 ? '+' : ''}${formatKRW(pnlAmt)}` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-medium" style={{ color: cur ? pnlColor : '#555570' }}>
+                            {cur ? `${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%` : '-'}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <div className="text-center py-8 text-[#555570] text-sm">
-                {loading ? '로드 중...' : 'KIS 연결 대기 중'}
+                {loading ? '로드 중...' : '보유 종목 없음'}
               </div>
             )}
           </div>
@@ -250,7 +305,7 @@ export default function AccountPage() {
 
       {/* ─── 수익분석 탭 ─── */}
       {tab === 'analysis' && (
-        <InvestmentAnalysis kisSummary={hasKIS ? kisData.summary : null} />
+        <InvestmentAnalysis kisSummary={null} />
       )}
     </div>
   )

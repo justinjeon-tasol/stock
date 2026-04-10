@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Wallet, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAccountSummary } from '@/hooks/useAccountSummary'
-import { useKISBalance } from '@/hooks/useKISBalance'
+import { usePositions } from '@/hooks/usePositions'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatPrice, formatPct, formatTimeAgo } from '@/lib/format'
-import type { KISHolding } from '@/lib/kis-types'
+import type { Position } from '@/lib/types'
 
 function SummaryRow({
   label,
@@ -26,33 +26,33 @@ function SummaryRow({
   )
 }
 
-function HoldingRow({ holding }: { holding: KISHolding }) {
-  const isPnlPositive = holding.evluPflsAmt >= 0
+function HoldingRow({ position, currentPrice }: { position: Position; currentPrice: number | null }) {
+  const avg = position.avg_price
+  const cur = currentPrice ?? avg
+  const pnlPct = avg > 0 ? ((cur - avg) / avg) * 100 : 0
+  const pnlAmt = (cur - avg) * position.quantity
+  const isPnlPositive = pnlAmt >= 0
   const pnlColor = isPnlPositive ? 'text-[#4ade80]' : 'text-[#f87171]'
-  const dayColor = holding.dayChange >= 0 ? 'text-[#4ade80]' : 'text-[#f87171]'
 
   return (
     <div className="flex items-center gap-3 py-2 border-b border-[#1e1e2a] last:border-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-[#f0f0f8] truncate">{holding.name}</span>
-          <span className="text-xs text-[#555570]">{holding.code}</span>
+          <span className="text-sm font-medium text-[#f0f0f8] truncate">{position.name}</span>
+          <span className="text-xs text-[#555570]">{position.code}</span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-[#555570]">{holding.quantity}주</span>
-          <span className="text-xs text-[#555570]">평균 {formatPrice(holding.avgPrice)}</span>
+          <span className="text-xs text-[#555570]">{position.quantity}주</span>
+          <span className="text-xs text-[#555570]">평균 {formatPrice(avg)}</span>
         </div>
       </div>
       <div className="text-right shrink-0">
-        <div className="text-sm font-medium text-[#f0f0f8]">{formatPrice(holding.currentPrice)}</div>
-        <div className="flex items-center gap-1 justify-end">
-          <span className={`text-xs font-medium ${pnlColor}`}>
-            {isPnlPositive ? '+' : ''}{formatPct(holding.evluPflsRt)}
-          </span>
-          <span className={`text-xs ${dayColor}`}>
-            ({holding.dayChange >= 0 ? '+' : ''}{formatPct(holding.dayChangeRt)})
-          </span>
+        <div className="text-sm font-medium text-[#f0f0f8]">
+          {currentPrice ? formatPrice(currentPrice) : '-'}
         </div>
+        <span className={`text-xs font-medium ${pnlColor}`}>
+          {isPnlPositive ? '+' : ''}{formatPct(pnlPct)}
+        </span>
       </div>
     </div>
   )
@@ -60,15 +60,31 @@ function HoldingRow({ holding }: { holding: KISHolding }) {
 
 export function AccountSummaryCard() {
   const { summary, loading, error } = useAccountSummary()
-  const { data: kisData, loading: kisLoading, refetch: kisRefetch, lastFetchedAt } = useKISBalance()
+  const { positions } = usePositions({ status: 'OPEN' })
   const [showHoldings, setShowHoldings] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({})
 
-  const handleRefresh = async () => {
+  // 현재 시세 조회 (참고용)
+  const fetchPrices = async () => {
     setRefreshing(true)
-    await kisRefetch()
+    const prices: Record<string, number> = {}
+    for (const pos of positions) {
+      try {
+        const resp = await fetch(`/api/kis/price?code=${pos.code}`)
+        if (resp.ok) {
+          const data = await resp.json()
+          if (data.price > 0) prices[pos.code] = data.price
+        }
+      } catch { /* ignore */ }
+    }
+    setCurrentPrices(prices)
     setRefreshing(false)
   }
+
+  useEffect(() => {
+    if (positions.length > 0) fetchPrices()
+  }, [positions.length])
 
   if (loading) return <SkeletonCard />
   if (error) {
@@ -90,20 +106,20 @@ export function AccountSummaryCard() {
     )
   }
 
-  // KIS 실시간 데이터가 있으면 우선 사용
-  const displayData = kisData ? {
-    totEvluAmt: kisData.summary.totEvluAmt,
-    evluPflsAmt: kisData.summary.evluPflsAmt,
-    cashAmt: kisData.summary.cashAmt,
-    stockEvluAmt: kisData.summary.stockEvluAmt,
-    pchsAmt: kisData.summary.pchsAmt,
-    updatedAt: lastFetchedAt,
-  } : {
-    totEvluAmt: summary.tot_evlu_amt,
-    evluPflsAmt: summary.evlu_pfls_amt,
-    cashAmt: summary.cash_amt,
-    stockEvluAmt: summary.stock_evlu_amt,
-    pchsAmt: summary.pchs_amt,
+  // DB 기반 계좌 요약 + 현재 시세로 보유종목 평가금액 계산
+  const pchsAmt = positions.reduce((sum, p) => sum + p.avg_price * p.quantity, 0)
+  const stockEvluAmt = positions.reduce((sum, p) => {
+    const cur = currentPrices[p.code] ?? p.avg_price
+    return sum + cur * p.quantity
+  }, 0)
+  const evluPflsAmt = stockEvluAmt - pchsAmt
+
+  const displayData = {
+    totEvluAmt: summary.tot_evlu_amt > 0 ? summary.tot_evlu_amt : (summary.cash_amt + stockEvluAmt),
+    evluPflsAmt,
+    cashAmt: summary.cash_amt > 0 ? summary.cash_amt : (summary.tot_evlu_amt - pchsAmt),
+    stockEvluAmt,
+    pchsAmt,
     updatedAt: summary.created_at,
   }
 
@@ -113,8 +129,6 @@ export function AccountSummaryCard() {
     ? (displayData.evluPflsAmt / displayData.pchsAmt) * 100
     : 0
 
-  const holdings = kisData?.holdings ?? []
-
   return (
     <Card>
       <CardHeader
@@ -122,7 +136,7 @@ export function AccountSummaryCard() {
         subtitle={displayData.updatedAt ? formatTimeAgo(displayData.updatedAt) + ' 기준' : undefined}
         action={
           <button
-            onClick={handleRefresh}
+            onClick={fetchPrices}
             disabled={refreshing}
             className="p-1 rounded hover:bg-[#22222e] transition-colors disabled:opacity-50"
             title="현재가 새로고침"
@@ -156,21 +170,21 @@ export function AccountSummaryCard() {
         />
       </div>
 
-      {/* 보유종목 토글 */}
-      {holdings.length > 0 && (
+      {/* 보유종목 토글 (DB 기반) */}
+      {positions.length > 0 && (
         <div className="mt-3 pt-3 border-t border-[#2a2a38]">
           <button
             onClick={() => setShowHoldings(!showHoldings)}
             className="flex items-center gap-1 w-full text-xs text-[#7c6af7] hover:text-[#9b8cf9] transition-colors"
           >
             {showHoldings ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            보유종목 {holdings.length}개 {showHoldings ? '접기' : '보기'}
+            보유종목 {positions.length}개 {showHoldings ? '접기' : '보기'}
           </button>
 
           {showHoldings && (
             <div className="mt-2">
-              {holdings.map((h) => (
-                <HoldingRow key={h.code} holding={h} />
+              {positions.map((p) => (
+                <HoldingRow key={p.id} position={p} currentPrice={currentPrices[p.code] ?? null} />
               ))}
             </div>
           )}
