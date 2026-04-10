@@ -106,6 +106,10 @@ def save_trade(order_result: dict, signal: dict) -> Optional[str]:
                 val = signal.get(col)
                 if val is not None:
                     row[col] = float(val)
+            # 매도 사유 (SELL일 때만)
+            sell_reason = signal.get("sell_reason")
+            if sell_reason and action == "SELL":
+                row["sell_reason"] = sell_reason
             client.table("trades").insert(row).execute()
             if first_id is None:
                 first_id = record_id
@@ -406,10 +410,8 @@ def close_position(
         if not result.data:
             return False
 
-        # 연결된 trades 레코드 result_pct 동기화
-        buy_trade_id = result.data[0].get("buy_trade_id")
-        if buy_trade_id:
-            update_trade_result_pct(buy_trade_id, result_pct)
+        # NOTE: BUY 레코드에 SELL 수익률을 역기록하지 않음
+        # SELL 시점에 별도 trades 레코드가 생성되므로 BUY 레코드는 건드리지 않는다
 
         logger.debug(f"[db] close_position: {position_id} → {close_reason} ({result_pct:+.2f}%)")
         return True

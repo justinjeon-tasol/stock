@@ -463,10 +463,25 @@ class Executor(BaseAgent):
                         self.log("warning",
                             f"[보호시간] {name}({code}) 긴급손절 발동: {pnl_pct:+.1f}%")
                         try:
-                            await self._place_order(token, code, name, "SELL", quantity)
+                            sell_order = await self._place_order(token, code, name, "SELL", quantity)
+                            result_pct = self._position_manager.calculate_result_pct(avg_price, current_price)
                             self._position_manager.close_position(
                                 position_id, current_price, "EMERGENCY_STOP_LOSS"
                             )
+                            if sell_order.get("status") == "OK":
+                                save_trade(
+                                    {"order_id": sell_order.get("order_no", ""), "action": "SELL",
+                                     "results": [{
+                                         "code": code, "name": name, "status": "OK",
+                                         "order_no": sell_order.get("order_no", ""),
+                                         "quantity": quantity, "price": int(current_price),
+                                         "strategy_id": pos.get("strategy_id"),
+                                         "result_pct": result_pct,
+                                     }],
+                                     "mode": "MOCK" if self._is_mock else "REAL"},
+                                    {"phase": current_phase, "strategy_id": pos.get("strategy_id"),
+                                     "sell_reason": "EMERGENCY_STOP_LOSS"},
+                                )
                             closed_count += 1
                         except Exception as exc:
                             self.log("error", f"[보호시간] 긴급손절 주문 실패: {exc}")
@@ -544,6 +559,20 @@ class Executor(BaseAgent):
                 if sell_order.get("status") == "OK":
                     result_pct = self._position_manager.calculate_result_pct(avg_price, current_price)
                     self._position_manager.close_position_by_id(position_id, exit_reason, result_pct)
+                    # SELL trades 레코드 생성
+                    save_trade(
+                        {"order_id": sell_order.get("order_no", ""), "action": "SELL",
+                         "results": [{
+                             "code": code, "name": name, "status": "OK",
+                             "order_no": sell_order.get("order_no", ""),
+                             "quantity": quantity, "price": int(current_price),
+                             "strategy_id": pos.get("strategy_id"),
+                             "result_pct": result_pct,
+                         }],
+                         "mode": "MOCK" if self._is_mock else "REAL"},
+                        {"phase": current_phase, "strategy_id": pos.get("strategy_id"),
+                         "sell_reason": exit_reason},
+                    )
                     self.log("info", f"[청산] {name}({code}) 종료 완료: {result_pct:+.2f}%")
                     closed_count += 1
         except Exception as exc:
@@ -762,7 +791,8 @@ class Executor(BaseAgent):
         save_trade(
             {"order_id": sell_order.get("order_no", ""), "action": "SELL",
              "results": [r], "mode": "MOCK" if self._is_mock else "REAL"},
-            {"phase": "", "strategy_id": position.get("strategy_id")},
+            {"phase": "", "strategy_id": position.get("strategy_id"),
+             "sell_reason": f"PARTIAL_TP_STAGE_{new_stage}"},
         )
 
         # 텔레그램 알림
@@ -892,7 +922,8 @@ class Executor(BaseAgent):
                      "result_pct": result_pct,
                  }],
                  "mode": "MOCK" if self._is_mock else "REAL"},
-                {"phase": current_phase, "strategy_id": pos.get("strategy_id")},
+                {"phase": current_phase, "strategy_id": pos.get("strategy_id"),
+                 "sell_reason": f"EXIT_PLAN_STAGE_{i+1}"},
             )
 
             await self._send_telegram(
@@ -1162,9 +1193,26 @@ class Executor(BaseAgent):
                     sell_price = current_price or avg_price
                     result_pct = self._position_manager.calculate_result_pct(avg_price, sell_price)
                     if position_id:
-                        self._position_manager.close_position_by_id(
-                            position_id, sell_reason, result_pct
-                        )
+                        if sell_reason == "REDUCE_POSITION":
+                            # 분할 축소: 포지션 OPEN 유지, 수량만 감소
+                            pos_record = self._position_manager.get_position_by_code(code)
+                            if pos_record:
+                                total_qty = int(pos_record.get("quantity", 0))
+                                remaining = total_qty - sell_qty
+                                if remaining > 0:
+                                    self._update_position_partial_sell(position_id, remaining, 0)
+                                else:
+                                    self._position_manager.close_position_by_id(
+                                        position_id, sell_reason, result_pct
+                                    )
+                            else:
+                                self._position_manager.close_position_by_id(
+                                    position_id, sell_reason, result_pct
+                                )
+                        else:
+                            self._position_manager.close_position_by_id(
+                                position_id, sell_reason, result_pct
+                            )
                     self.log(
                         "info",
                         f"SELL 완료: {name}({code}) {sell_qty}주 {result_pct:+.2f}% [{sell_reason}]",
@@ -1183,7 +1231,8 @@ class Executor(BaseAgent):
                     save_trade(
                         {"order_id": sell_order.get("order_no", ""), "action": "SELL",
                          "results": [sell_r], "mode": "MOCK" if self._is_mock else "REAL"},
-                        {"phase": phase, "strategy_id": strategy_id},
+                        {"phase": phase, "strategy_id": strategy_id,
+                         "sell_reason": sell_reason},
                     )
 
                 sell_results.append({
@@ -1561,6 +1610,10 @@ class Executor(BaseAgent):
             if not o2:
                 return None
             d = o2[0]
+            # 빈 dict 응답 검증: tot_evlu_amt가 없으면 비정상 응답
+            if not d or not d.get("tot_evlu_amt"):
+                self.log("warning", "[계좌] KIS output2가 비어있음 → 저장 스킵")
+                return None
             # KIS tot_evlu_amt = 현금 + 주식평가금액 (가장 신뢰할 수 있는 전체 자산)
             kis_tot_evlu = int(d.get("tot_evlu_amt", 0) or 0)
 

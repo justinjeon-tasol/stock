@@ -227,18 +227,47 @@ class WeightAdjuster(BaseAgent):
             if preemptive_targets:
                 self.log("info", f"선제 매도 대상 추가: {len(preemptive_targets)}종목")
 
-        # ── REDUCE 신호 기반 전체 포지션 축소 ──
+        # ── REDUCE 신호 기반 전체 포지션 축소 (쿨다운 6시간) ──
         reduce_signals = [s for s in active_signals if s.get("direction") == "REDUCE"]
         if reduce_signals:
-            reduce_pct = max(s.get("reduce_pct", 50) for s in reduce_signals)
-            reduce_targets = self._get_reduce_targets(reduce_pct)
-            existing_codes = {t["code"] for t in sell_targets}
-            for rt in reduce_targets:
-                if rt["code"] not in existing_codes:
-                    sell_targets.append(rt)
-                    existing_codes.add(rt["code"])
-            if reduce_targets:
-                self.log("warning", f"포지션 축소({reduce_pct}%): {len(reduce_targets)}종목")
+            # 쿨다운: 마지막 REDUCE 실행 후 6시간 이내면 스킵
+            reduce_allowed = True
+            try:
+                from database.db import _get_client
+                _rc = _get_client()
+                if _rc:
+                    last_reduce = (
+                        _rc.table("trades")
+                        .select("created_at")
+                        .eq("action", "SELL")
+                        .eq("sell_reason", "REDUCE_POSITION")
+                        .order("created_at", desc=True)
+                        .limit(1)
+                        .execute()
+                    )
+                    if last_reduce.data:
+                        from datetime import datetime, timezone
+                        last_dt = datetime.fromisoformat(
+                            last_reduce.data[0]["created_at"].replace("Z", "+00:00")
+                        )
+                        hours_since = (datetime.now(timezone.utc) - last_dt).total_seconds() / 3600
+                        if hours_since < 6.0:
+                            reduce_allowed = False
+                            self.log("info",
+                                f"REDUCE 쿨다운: 마지막 축소 {hours_since:.1f}h 전 → 6h 미경과, SKIP")
+            except Exception:
+                pass
+
+            if reduce_allowed:
+                reduce_pct = max(s.get("reduce_pct", 50) for s in reduce_signals)
+                reduce_targets = self._get_reduce_targets(reduce_pct)
+                existing_codes = {t["code"] for t in sell_targets}
+                for rt in reduce_targets:
+                    if rt["code"] not in existing_codes:
+                        sell_targets.append(rt)
+                        existing_codes.add(rt["code"])
+                if reduce_targets:
+                    self.log("warning", f"포지션 축소({reduce_pct}%): {len(reduce_targets)}종목")
 
         # ── 시그널 역전 매도 대상 합류 (Orchestrator Step 2-b2에서 주입) ─��
         reversal_sells = payload.get("signal_reversal_sells", [])

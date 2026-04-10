@@ -138,12 +138,12 @@ class MarketAnalyzer(BaseAgent):
             "description": "테슬라 급락 → 2차전지 선제 매도",
         },
         "vix_warning": {
-            "threshold_val": 25.0,
+            "threshold_val": 30.0,
             "kr_sectors": [],
             "kr_themes": [],
             "direction": "REDUCE",
             "reduce_pct": 50,
-            "description": "VIX 25+ → 전체 포지션 50% 축소 권고",
+            "description": "VIX 30+ → 전체 포지션 50% 축소 권고",
         },
     }
 
