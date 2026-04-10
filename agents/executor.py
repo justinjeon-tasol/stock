@@ -576,7 +576,7 @@ class Executor(BaseAgent):
                         try:
                             sell_order = await self._place_order(token, code, name, "SELL", quantity)
                             if sell_order.get("status") == "OK":
-                                filled_price = sell_order.get("filled_price", current_price)
+                                filled_price = sell_order.get("filled_price") or current_price
                                 filled_qty = sell_order.get("filled_qty", quantity)
                                 result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
                                 self._position_manager.close_position(
@@ -672,7 +672,7 @@ class Executor(BaseAgent):
                     continue
 
                 if sell_order.get("status") == "OK":
-                    filled_price = sell_order.get("filled_price", current_price)
+                    filled_price = sell_order.get("filled_price") or current_price
                     filled_qty = sell_order.get("filled_qty", quantity)
                     result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
                     self._position_manager.close_position_by_id(position_id, exit_reason, result_pct)
@@ -784,7 +784,7 @@ class Executor(BaseAgent):
 
                 if order_result.get("status") == "OK":
                     update_pending_dca_status(dca_id, "EXECUTED")
-                    filled_price = order_result.get("filled_price", current_price)
+                    filled_price = order_result.get("filled_price") or current_price
                     filled_qty = order_result.get("filled_qty", quantity)
                     # 포지션 수량/평균가 업데이트 (체결가 기준)
                     self._update_position_after_dca(position_id, filled_qty, filled_price)
@@ -895,7 +895,7 @@ class Executor(BaseAgent):
             return False
 
         # 체결가 기준으로 DB 업데이트
-        filled_price = sell_order.get("filled_price", current_price)
+        filled_price = sell_order.get("filled_price") or current_price
         filled_qty = sell_order.get("filled_qty", sell_qty)
         actual_remaining = quantity - filled_qty
 
@@ -1018,7 +1018,7 @@ class Executor(BaseAgent):
                 self.log("warning", f"[EXIT_PLAN] {name}({code}) 미체결: {sell_order.get('message', '')}")
                 return False
 
-            filled_price = sell_order.get("filled_price", current_price)
+            filled_price = sell_order.get("filled_price") or current_price
             filled_qty = sell_order.get("filled_qty", sell_qty)
             actual_remaining = quantity - filled_qty
 
@@ -1320,7 +1320,7 @@ class Executor(BaseAgent):
 
                 result_pct = 0.0
                 if sell_order.get("status") == "OK":
-                    filled_price = sell_order.get("filled_price", current_price or avg_price)
+                    filled_price = sell_order.get("filled_price") or current_price or avg_price
                     filled_qty = sell_order.get("filled_qty", sell_qty)
                     result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
                     if position_id:
@@ -1554,7 +1554,7 @@ class Executor(BaseAgent):
 
                     # BUY 체결 확인 후 포지션 오픈 (체결가 기준)
                     if r["status"] == "OK":
-                        avg_price = order_result.get("filled_price", current_price_for_qty or 0.0)
+                        avg_price = order_result.get("filled_price") or current_price_for_qty or 0.0
                         filled_qty = order_result.get("filled_qty", buy_quantity)
                         # trades 저장 후 position 연결
                         r["quantity"]    = filled_qty
