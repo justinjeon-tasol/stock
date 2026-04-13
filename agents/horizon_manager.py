@@ -28,7 +28,7 @@ _CONFIG_PATH = os.path.join(
 
 # 기본 설정 (JSON 로드 실패 시 fallback)
 _FALLBACK_HORIZONS = {
-    "초단기": {"max_hold_hours": 3,  "time_exit": "15:20", "take_profit_pct": 1.5,  "stop_loss_pct": -0.7,  "trailing_stop": False, "trailing_stop_pct": 0.0, "trailing_activate_pct": 0.0, "exit_on_phase_change": []},
+    "초단기": {"max_hold_hours": 3,  "time_exit": "15:20", "take_profit_pct": 1.5,  "stop_loss_pct": -1.5,  "trailing_stop": False, "trailing_stop_pct": 0.0, "trailing_activate_pct": 0.0, "exit_on_phase_change": []},
     "단기":   {"max_hold_days":  5,  "time_exit": None,    "take_profit_pct": 10.0, "stop_loss_pct": -2.0,  "trailing_stop": True,  "trailing_stop_pct": 1.5, "trailing_activate_pct": 2.0, "exit_on_phase_change": ["하락장", "대폭락장"]},
     "중기":   {"max_hold_days":  20, "time_exit": None,    "take_profit_pct": 15.0, "stop_loss_pct": -3.0,  "trailing_stop": True,  "trailing_stop_pct": 2.5, "trailing_activate_pct": 3.0, "exit_on_phase_change": ["변동폭큰", "하락장", "대폭락장"]},
     "장기":   {"max_hold_days":  90, "time_exit": None,    "take_profit_pct": 25.0, "stop_loss_pct": -5.0,  "trailing_stop": True,  "trailing_stop_pct": 4.0, "trailing_activate_pct": 8.0, "exit_on_phase_change": ["하락장", "대폭락장"]},

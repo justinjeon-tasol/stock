@@ -1016,6 +1016,8 @@ class Executor(BaseAgent):
         quantity = int(pos.get("quantity", 0))
         version = plan.get("plan_version", 1)
 
+        avg_price_pos = float(pos.get("avg_price", 0))
+
         for i, stage in enumerate(stages):
             if stage.get("status") != "PENDING":
                 continue
@@ -1023,6 +1025,23 @@ class Executor(BaseAgent):
             trigger_price = float(stage.get("trigger_price", 0))
             if trigger_price <= 0 or current_price < trigger_price:
                 continue
+
+            # 익절 단계(PARTIAL_TP)는 현재가가 매입가 이상일 때만 실행
+            if stage.get("type") == "PARTIAL_TP" and avg_price_pos > 0:
+                if current_price < avg_price_pos:
+                    self.log("info",
+                        f"[EXIT_PLAN] {name}({code}) stage {i+1} 스킵: "
+                        f"현재가 {current_price:,.0f} < 매입가 {avg_price_pos:,.0f} (손실 상태 익절 방지)")
+                    continue
+
+            # FINAL_TP(LOSS_ZONE)도 매입가 -2% 미만이면 손절 로직에 위임
+            if stage.get("type") == "FINAL_TP" and avg_price_pos > 0:
+                pnl_pct = (current_price / avg_price_pos - 1) * 100
+                if pnl_pct < -2.0:
+                    self.log("info",
+                        f"[EXIT_PLAN] {name}({code}) stage {i+1} 스킵: "
+                        f"pnl={pnl_pct:+.2f}% → 손절 로직에 위임")
+                    continue
 
             # 조건 충족 — 매도 실행
             sell_ratio = float(stage.get("sell_ratio", 0.3))
@@ -1187,7 +1206,7 @@ class Executor(BaseAgent):
 
         elif trend == "PROFIT_FLAT":
             # 수익 중 + 횡보/하락 예측 → 빠르게 수익 확정
-            s1 = max(avg_price * 1.005, current_price * 0.995)
+            s1 = max(avg_price * 1.005, current_price * 1.002)
             s2 = avg_price * 1.04
             stages = [
                 {"stage": 1, "type": "PARTIAL_TP", "trigger_price": round(s1),
@@ -1212,8 +1231,8 @@ class Executor(BaseAgent):
             ]
 
         else:  # LOSS_ZONE - 예측상 매입가 회복 불가
-            # 반등 시 손실 최소화 매도 — 최소 매입가 -1% 이상에서
-            s1 = max(current_price * 1.02, avg_price * 0.99)
+            # 반등 시 손실 최소화 매도 — 최소 매입가 이상에서
+            s1 = max(current_price * 1.02, avg_price * 1.005)
             stages = [
                 {"stage": 1, "type": "FINAL_TP", "trigger_price": round(s1),
                  "sell_ratio": 1.0, "sell_qty": quantity,
@@ -1329,6 +1348,32 @@ class Executor(BaseAgent):
                 position_id = st.get("position_id", "")
                 avg_price   = float(st.get("avg_price", 0))
                 sell_reason = st.get("sell_reason", "SIGNAL_EXIT")
+
+                # SIGNAL_EXIT는 매수 후 2시간 보호 시간 적용
+                if sell_reason == "SIGNAL_EXIT" and position_id:
+                    try:
+                        from database.db import _get_client as _sell_db
+                        _sc = _sell_db()
+                        _pos = None
+                        if _sc:
+                            _pr = _sc.table("positions").select("created_at").eq("id", position_id).execute()
+                            _pos = _pr.data[0] if _pr.data else None
+                        if _pos and _pos.get("created_at"):
+                            _entry = datetime.fromisoformat(
+                                _pos["created_at"].replace("Z", "+00:00"))
+                            _held_h = (datetime.now(timezone.utc) - _entry).total_seconds() / 3600
+                            if _held_h < 2.0:
+                                self.log("info",
+                                    f"[SELL] {name}({code}) 보호시간 내 SIGNAL_EXIT 스킵 ({_held_h*60:.0f}분)")
+                                sell_results.append({
+                                    "code": code, "name": name,
+                                    "status": "SKIP", "order_no": "",
+                                    "message": f"보호시간 내 SIGNAL_EXIT 스킵 ({_held_h*60:.0f}분)",
+                                    "result_pct": 0.0,
+                                })
+                                continue
+                    except Exception:
+                        pass
 
                 if token is None:
                     sell_results.append({
@@ -1543,8 +1588,16 @@ class Executor(BaseAgent):
                                             "message": "추격매수 방지 (+2% 초과)",
                                         })
                                         continue
-                    except Exception:
-                        pass  # 쿨다운 체크 실패 시 무시하고 진행
+                    except Exception as _cool_exc:
+                        # 쿨다운 조회 실패 시 보수적으로 4시간 쿨다운 적용
+                        self.log("warning",
+                            f"{name}({code}) 쿨다운 조회 실패 → 기본 4h 쿨다운 적용: {_cool_exc}")
+                        results.append({
+                            "code": code, "name": name,
+                            "status": "SKIP", "order_no": "",
+                            "message": "쿨다운 조회 실패 (보수적 4h 적용)",
+                        })
+                        continue
 
                     if token is None:
                         results.append({
