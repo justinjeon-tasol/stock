@@ -788,6 +788,42 @@ class Executor(BaseAgent):
                     filled_qty = order_result.get("filled_qty", quantity)
                     # 포지션 수량/평균가 업데이트 (체결가 기준)
                     self._update_position_after_dca(position_id, filled_qty, filled_price)
+                    # trades 테이블에 DCA 2차 매수 기록
+                    try:
+                        from database.db import save_trade, _get_client as _dca_db
+                        # position에서 phase/strategy_id 조회
+                        _dca_phase, _dca_strat = "", "DCA"
+                        if position_id:
+                            try:
+                                _dc = _dca_db()
+                                if _dc:
+                                    _pr = _dc.table("positions").select("phase, strategy_id").eq("id", position_id).execute()
+                                    if _pr.data:
+                                        _dca_phase = _pr.data[0].get("phase", "")
+                                        _dca_strat = _pr.data[0].get("strategy_id") or "DCA"
+                            except Exception:
+                                pass
+                        save_trade(
+                            {
+                                "order_id": order_result.get("order_no", ""),
+                                "action": "BUY",
+                                "results": [{
+                                    "code": code, "name": name, "status": "OK",
+                                    "order_no": order_result.get("order_no", ""),
+                                    "quantity": filled_qty,
+                                    "price": int(filled_price),
+                                    "strategy_id": _dca_strat,
+                                }],
+                                "mode": "MOCK" if self._is_mock else "REAL",
+                            },
+                            {
+                                "phase": _dca_phase,
+                                "strategy_id": _dca_strat,
+                                "signal_source": "DCA_STAGE2",
+                            },
+                        )
+                    except Exception as exc:
+                        self.log("warning", f"[DCA] {name}({code}) trades 기록 실패: {exc}")
                     self.log(
                         "info",
                         f"[DCA] {name}({code}) 2차 매수 체결: {filled_qty}주 @ {filled_price:,.0f}원",

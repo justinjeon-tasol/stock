@@ -545,6 +545,31 @@ class Orchestrator:
                         holding_period="단기",
                         signal_source="KIS_SYNC",
                     )
+                    # trades 테이블에 동기화 매수 기록
+                    try:
+                        from database.db import save_trade
+                        save_trade(
+                            {
+                                "order_id": "SYNC_KIS",
+                                "action": "BUY",
+                                "results": [{
+                                    "code": code,
+                                    "name": kis_info["name"],
+                                    "status": "OK",
+                                    "quantity": kis_info["quantity"],
+                                    "price": int(kis_info["avg_price"]),
+                                    "strategy_id": "SYNC_KIS",
+                                }],
+                                "mode": "MOCK" if self.executor._is_mock else "REAL",
+                            },
+                            {
+                                "phase": self._current_phase or "일반장",
+                                "strategy_id": "SYNC_KIS",
+                                "signal_source": "KIS_SYNC",
+                            },
+                        )
+                    except Exception:
+                        pass
                     changes += 1
 
             # 2. Supabase OPEN인데 KIS에 없으면 → CLOSED 처리
@@ -556,6 +581,33 @@ class Orchestrator:
                     self.executor._position_manager.close_position_by_id(
                         db_pos["id"], "KIS_SYNC_CLOSED", 0.0
                     )
+                    # trades 테이블에 동기화 매도 기록
+                    try:
+                        from database.db import save_trade
+                        save_trade(
+                            {
+                                "order_id": "SYNC_KIS",
+                                "action": "SELL",
+                                "results": [{
+                                    "code": code,
+                                    "name": db_pos.get("name", ""),
+                                    "status": "OK",
+                                    "quantity": int(db_pos.get("quantity", 0)),
+                                    "price": int(db_pos.get("avg_price", 0)),
+                                    "strategy_id": "SYNC_KIS",
+                                    "result_pct": 0.0,
+                                }],
+                                "mode": "MOCK" if self.executor._is_mock else "REAL",
+                            },
+                            {
+                                "phase": self._current_phase or "일반장",
+                                "strategy_id": "SYNC_KIS",
+                                "signal_source": "KIS_SYNC",
+                                "sell_reason": "KIS_SYNC_CLOSED",
+                            },
+                        )
+                    except Exception:
+                        pass
                     changes += 1
 
             # 3. 수량 또는 매입가 불일치 → KIS 기준으로 보정
