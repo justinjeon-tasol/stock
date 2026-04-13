@@ -1018,6 +1018,33 @@ class Executor(BaseAgent):
 
         avg_price_pos = float(pos.get("avg_price", 0))
 
+        # ── 트레일링 스탑: 고점 갱신 시 손절가 상향만 허용 ──
+        dsl = plan.get("dynamic_sl", {})
+        if dsl and dsl.get("trailing_enabled"):
+            old_peak = float(dsl.get("peak_price", 0))
+            old_sl = float(dsl.get("current_sl_price", 0))
+            activate_pct = float(dsl.get("trailing_activate_pct", 0))
+            drop_pct = float(dsl.get("trailing_drop_pct", 0))
+
+            # 고점 갱신
+            if current_price > old_peak:
+                dsl["peak_price"] = current_price
+                # 트레일링 활성화 조건: 매입가 대비 activate_pct% 이상 상승
+                if avg_price_pos > 0 and activate_pct > 0:
+                    gain_pct = (current_price / avg_price_pos - 1) * 100
+                    if gain_pct >= activate_pct and drop_pct > 0:
+                        new_sl = round(current_price * (1 - drop_pct / 100))
+                        # 상향만 허용 (절대 하향 금지)
+                        if new_sl > old_sl:
+                            dsl["current_sl_price"] = new_sl
+                            self.log("info",
+                                f"[트레일링] {name}({code}) 고점 {current_price:,.0f} "
+                                f"→ SL 상향: {old_sl:,.0f} → {new_sl:,.0f}")
+                # DB 저장
+                from database.db import save_exit_plan as _save_ep
+                plan["dynamic_sl"] = dsl
+                _save_ep(plan)
+
         for i, stage in enumerate(stages):
             if stage.get("status") != "PENDING":
                 continue
@@ -1679,6 +1706,74 @@ class Executor(BaseAgent):
                             signal_confidence=t.get("signal_confidence"),
                             signal_trigger=t.get("signal_trigger"),
                         )
+
+                        # ── 매수 시 exit_plan 즉시 확정 (Plan-Your-Trade) ──
+                        try:
+                            from database.db import save_exit_plan
+                            from agents.horizon_manager import HorizonManager
+                            _hm = HorizonManager()
+                            _tp_pct, _sl_pct = _hm.get_tp_sl(holding_period)
+                            _h_cfg = _hm.get_horizon_params(holding_period)
+                            _trailing = _h_cfg.get("trailing_stop", False)
+                            _trail_activate = float(_h_cfg.get("trailing_activate_pct", 0))
+                            _trail_drop = float(_h_cfg.get("trailing_stop_pct", 0))
+
+                            # 고정 TP 단계 계산 (매입가 기준)
+                            _tp1_pct = _tp_pct * 0.3   # TP의 30% 지점에서 1차 익절
+                            _tp2_pct = _tp_pct * 0.7   # TP의 70% 지점에서 2차 익절
+                            _tp3_pct = _tp_pct          # TP 도달 시 잔량 청산
+
+                            _exit_stages = [
+                                {"stage": 1, "type": "PARTIAL_TP",
+                                 "trigger_price": round(avg_price * (1 + _tp1_pct / 100)),
+                                 "sell_ratio": 0.30, "sell_qty": max(1, int(filled_qty * 0.3)),
+                                 "status": "PENDING",
+                                 "rationale": f"1차 익절 (매입+{_tp1_pct:.1f}%)"},
+                                {"stage": 2, "type": "PARTIAL_TP",
+                                 "trigger_price": round(avg_price * (1 + _tp2_pct / 100)),
+                                 "sell_ratio": 0.30, "sell_qty": max(1, int(filled_qty * 0.3)),
+                                 "status": "PENDING",
+                                 "rationale": f"2차 익절 (매입+{_tp2_pct:.1f}%)"},
+                                {"stage": 3, "type": "FINAL_TP",
+                                 "trigger_price": round(avg_price * (1 + _tp3_pct / 100)),
+                                 "sell_ratio": 1.0,
+                                 "sell_qty": max(1, filled_qty - max(1, int(filled_qty * 0.3)) * 2),
+                                 "status": "PENDING",
+                                 "rationale": f"잔량 청산 (매입+{_tp3_pct:.1f}%)"},
+                            ]
+                            _sl_price = round(avg_price * (1 + _sl_pct / 100))
+
+                            pos_record = self._position_manager.get_position_by_code(code)
+                            _pid = pos_record.get("id", "") if pos_record else ""
+                            _fixed_plan = {
+                                "position_id": _pid,
+                                "code": code,
+                                "name": name,
+                                "avg_price": avg_price,
+                                "quantity": filled_qty,
+                                "holding_period": holding_period,
+                                "current_phase": phase,
+                                "plan_type": "FIXED_AT_BUY",
+                                "exit_stages": _exit_stages,
+                                "dynamic_sl": {
+                                    "initial_sl_price": _sl_price,
+                                    "current_sl_price": _sl_price,
+                                    "sl_pct": _sl_pct,
+                                    "trailing_enabled": _trailing,
+                                    "trailing_activate_pct": _trail_activate,
+                                    "trailing_drop_pct": _trail_drop,
+                                    "peak_price": avg_price,
+                                },
+                                "plan_version": 1,
+                            }
+                            save_exit_plan(_fixed_plan)
+                            self.log("info",
+                                f"[EXIT_PLAN] {name}({code}) 매수 시 확정: "
+                                f"TP1={_exit_stages[0]['trigger_price']:,} "
+                                f"TP2={_exit_stages[1]['trigger_price']:,} "
+                                f"SL={_sl_price:,}")
+                        except Exception as _ep_exc:
+                            self.log("warning", f"[EXIT_PLAN] {name}({code}) 생성 실패: {_ep_exc}")
 
                         # DCA 2차 매수 대기 등록
                         dca_remaining_qty = total_quantity - filled_qty

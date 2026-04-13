@@ -249,15 +249,21 @@ class Orchestrator:
             ma_payload = step3_result.body.get("payload", {})
             forecasts = ma_payload.get("price_forecasts", {})
             if forecasts:
-                from database.db import get_open_positions, save_exit_plan
+                from database.db import get_open_positions, save_exit_plan, get_exit_plan
                 from agents.executor import Executor
                 open_positions = get_open_positions()
                 phase_now = ma_payload.get("market_phase", {}).get("phase", "일반장")
                 plan_count = 0
+                skip_count = 0
                 for pos in open_positions:
                     code = pos.get("code", "")
                     fc = forecasts.get(code)
                     if not fc:
+                        continue
+                    # Plan-Your-Trade: 매수 시 생성된 plan이 있으면 덮어쓰지 않음
+                    existing = get_exit_plan(pos["id"])
+                    if existing and existing.get("plan_type") == "FIXED_AT_BUY":
+                        skip_count += 1
                         continue
                     plan = Executor.build_exit_plan(
                         position_id=pos["id"], code=code, name=pos.get("name", ""),
@@ -268,8 +274,9 @@ class Orchestrator:
                     )
                     save_exit_plan(plan)
                     plan_count += 1
-                if plan_count:
-                    self._logger.info("[2-c] exit_plan 갱신: %d종목 (forecast 기반)", plan_count)
+                if plan_count or skip_count:
+                    self._logger.info(
+                        "[2-c] exit_plan: 신규 %d종목, 기존 유지 %d종목", plan_count, skip_count)
         except Exception as exc:
             self._logger.warning("[2-c] exit_plan 갱신 실패 (무시): %s", exc)
 
