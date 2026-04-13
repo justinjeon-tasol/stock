@@ -239,6 +239,7 @@ def save_position(
     signal_source: Optional[str] = None,
     signal_confidence: Optional[str] = None,
     signal_trigger: Optional[str] = None,
+    portfolio_type: str = "short",
 ) -> Optional[str]:
     """
     positions 테이블에 신규 OPEN 포지션 저장.
@@ -299,6 +300,9 @@ def save_position(
             row["signal_trigger"] = signal_trigger
         # peak_price는 avg_price로 초기화 (트레일링 스탑용)
         row["peak_price"] = avg_price
+        # 포트폴리오 타입 (short/long)
+        if portfolio_type:
+            row["portfolio_type"] = portfolio_type
 
         client.table("positions").insert(row).execute()
         logger.debug(f"[db] save_position: {name}({code}) 저장 완료")
@@ -313,9 +317,14 @@ def save_position(
 # 5. get_open_positions
 # ---------------------------------------------------------------------------
 
-def get_open_positions() -> list:
+def get_open_positions(portfolio_type: Optional[str] = "short") -> list:
     """
-    status='OPEN'인 모든 포지션 조회.
+    status='OPEN'인 포지션 조회.
+
+    Parameters
+    ----------
+    portfolio_type : 'short' | 'long' | None
+        None이면 전체 조회, 지정하면 해당 타입만 조회.
 
     Returns
     -------
@@ -327,14 +336,24 @@ def get_open_positions() -> list:
         return []
 
     try:
-        result = (
-            client.table("positions")
-            .select("*")
-            .eq("status", "OPEN")
-            .execute()
-        )
+        query = client.table("positions").select("*").eq("status", "OPEN")
+        if portfolio_type:
+            query = query.eq("portfolio_type", portfolio_type)
+        result = query.execute()
         return result.data or []
     except Exception as e:
+        # portfolio_type 컬럼이 없는 경우 전체 조회 폴백
+        if "portfolio_type" in str(e):
+            try:
+                result = (
+                    client.table("positions")
+                    .select("*")
+                    .eq("status", "OPEN")
+                    .execute()
+                )
+                return result.data or []
+            except Exception:
+                pass
         logger.warning(f"[db] get_open_positions 실패: {e}")
         return []
 

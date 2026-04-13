@@ -213,7 +213,7 @@ class PositionManager:
         list[dict]
             [{"code", "name", "position_id", "avg_price", "sell_reason"}, ...]
         """
-        open_positions = get_open_positions()
+        open_positions = get_open_positions(portfolio_type="short")
         sell_list: list = []
 
         for pos in open_positions:
