@@ -18,14 +18,17 @@ interface RealtimeData {
   accountSummary: AccountSummary | null;
   positions: Position[];
   recentTrades: Trade[];
+  currentPrices: Record<string, number>;
   lastUpdated: {
     marketPhase: Date | null;
     accountSummary: Date | null;
     positions: Date | null;
     trades: Date | null;
+    prices: Date | null;
   };
   isConnected: boolean;
   refresh: (table?: string) => Promise<void>;
+  refreshPrices: () => Promise<void>;
 }
 
 const RealtimeContext = createContext<RealtimeData>({
@@ -33,9 +36,11 @@ const RealtimeContext = createContext<RealtimeData>({
   accountSummary: null,
   positions: [],
   recentTrades: [],
-  lastUpdated: { marketPhase: null, accountSummary: null, positions: null, trades: null },
+  currentPrices: {},
+  lastUpdated: { marketPhase: null, accountSummary: null, positions: null, trades: null, prices: null },
   isConnected: false,
   refresh: async () => {},
+  refreshPrices: async () => {},
 });
 
 export function useSharedRealtime() {
@@ -49,12 +54,14 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
   );
   const [positions, setPositions] = useState<Position[]>([]);
   const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
+  const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdated, setLastUpdated] = useState({
     marketPhase: null as Date | null,
     accountSummary: null as Date | null,
     positions: null as Date | null,
     trades: null as Date | null,
+    prices: null as Date | null,
   });
 
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -81,6 +88,30 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
       setLastUpdated((prev) => ({ ...prev, trades: new Date() }));
     }
   }, []);
+
+  const refreshPrices = useCallback(async () => {
+    // OPEN 포지션의 현재가를 KIS API로 일괄 조회
+    const openPositions = positions.filter((p) => p.status === "OPEN");
+    if (openPositions.length === 0) return;
+    const prices: Record<string, number> = {};
+    await Promise.all(
+      openPositions.map(async (pos) => {
+        try {
+          const resp = await fetch(`/api/kis/price?code=${pos.code}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.price > 0) prices[pos.code] = data.price;
+          }
+        } catch {
+          /* ignore */
+        }
+      })
+    );
+    if (Object.keys(prices).length > 0) {
+      setCurrentPrices(prices);
+      setLastUpdated((prev) => ({ ...prev, prices: new Date() }));
+    }
+  }, [positions]);
 
   const fetchInitialData = useCallback(async () => {
     const [phaseRes, accountRes] = await Promise.all([
@@ -146,9 +177,19 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
       if (!table || table === "trades") {
         await fetchRecentTrades();
       }
+      if (!table || table === "prices") {
+        await refreshPrices();
+      }
     },
-    [fetchPositions, fetchRecentTrades]
+    [fetchPositions, fetchRecentTrades, refreshPrices]
   );
+
+  // 포지션 변경 시 시세 자동 조회
+  useEffect(() => {
+    if (positions.length > 0) {
+      refreshPrices();
+    }
+  }, [positions.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchInitialData();
@@ -212,9 +253,11 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
         accountSummary,
         positions,
         recentTrades,
+        currentPrices,
         lastUpdated,
         isConnected,
         refresh,
+        refreshPrices,
       }}
     >
       {children}

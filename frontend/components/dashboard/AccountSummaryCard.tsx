@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Wallet, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
-import { useAccountSummary } from '@/hooks/useAccountSummary'
-import { usePositions } from '@/hooks/usePositions'
+import { useSharedRealtime } from '@/providers/SharedRealtimeProvider'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatPrice, formatPct, formatTimeAgo } from '@/lib/format'
@@ -59,32 +58,18 @@ function HoldingRow({ position, currentPrice }: { position: Position; currentPri
 }
 
 export function AccountSummaryCard() {
-  const { summary, loading, error } = useAccountSummary()
-  const { positions } = usePositions({ status: 'OPEN' })
+  const { accountSummary: summary, positions: allPositions, currentPrices, refreshPrices } = useSharedRealtime()
+  const positions = allPositions.filter((p) => p.status === 'OPEN')
+  const loading = summary === null
+  const error = null as string | null
   const [showHoldings, setShowHoldings] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
-  const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({})
 
-  // 현재 시세 조회 (참고용)
   const fetchPrices = async () => {
     setRefreshing(true)
-    const prices: Record<string, number> = {}
-    for (const pos of positions) {
-      try {
-        const resp = await fetch(`/api/kis/price?code=${pos.code}`)
-        if (resp.ok) {
-          const data = await resp.json()
-          if (data.price > 0) prices[pos.code] = data.price
-        }
-      } catch { /* ignore */ }
-    }
-    setCurrentPrices(prices)
+    await refreshPrices()
     setRefreshing(false)
   }
-
-  useEffect(() => {
-    if (positions.length > 0) fetchPrices()
-  }, [positions.length])
 
   if (loading) return <SkeletonCard />
   if (error) {
@@ -114,13 +99,17 @@ export function AccountSummaryCard() {
   }, 0)
   const evluPflsAmt = stockEvluAmt - pchsAmt
 
+  // 원장 기반 현금 우선, 없으면 기존 cash_amt 사용
+  const cashAmt = summary.ledger_cash_amt ?? summary.cash_amt
   const displayData = {
-    totEvluAmt: summary.tot_evlu_amt > 0 ? summary.tot_evlu_amt : (summary.cash_amt + stockEvluAmt),
+    totEvluAmt: cashAmt + stockEvluAmt,
     evluPflsAmt,
-    cashAmt: summary.cash_amt > 0 ? summary.cash_amt : (summary.tot_evlu_amt - pchsAmt),
+    cashAmt,
     stockEvluAmt,
     pchsAmt,
     updatedAt: summary.created_at,
+    reconciled: summary.reconciled,
+    discrepancy: summary.discrepancy_amt ?? 0,
   }
 
   const isPnlPositive = displayData.evluPflsAmt >= 0
@@ -169,6 +158,15 @@ export function AccountSummaryCard() {
           valueClass={pnlColor}
         />
       </div>
+
+      {/* KIS 불일치 경고 */}
+      {displayData.reconciled === false && Math.abs(displayData.discrepancy) > 0 && (
+        <div className="mt-2 px-2 py-1.5 rounded bg-amber-900/20 border border-amber-700/30">
+          <p className="text-xs text-amber-400">
+            KIS 잔액 불일치: {formatPrice(Math.abs(displayData.discrepancy))}
+          </p>
+        </div>
+      )}
 
       {/* 보유종목 토글 (DB 기반) */}
       {positions.length > 0 && (

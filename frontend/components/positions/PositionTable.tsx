@@ -3,6 +3,7 @@
 import { useCallback, useState, useMemo } from 'react'
 import { TrendingUp, TrendingDown, RefreshCw, ArrowUp, ArrowDown, Minus } from 'lucide-react'
 import { usePositions } from '@/hooks/usePositions'
+import { useSharedRealtime } from '@/providers/SharedRealtimeProvider'
 import { HorizonBadge } from './HorizonBadge'
 import { SignalBadge } from '@/components/ui/SignalBadge'
 import { SkeletonTable } from '@/components/ui/Skeleton'
@@ -52,6 +53,7 @@ function KalmanBadge({ trend }: { trend: string | null }) {
 
 export function PositionTable({ status, grouped = false }: PositionTableProps) {
   const { positions, loading, error, refetch } = usePositions({ status })
+  const { currentPrices: sharedPrices, refreshPrices } = useSharedRealtime()
   const [livePrice, setLivePrice] = useState<Record<string, KISPrice>>({})
   const [kalmanTrends, setKalmanTrends] = useState<Record<string, string>>({})
   const [refreshing, setRefreshing] = useState(false)
@@ -62,6 +64,10 @@ export function PositionTable({ status, grouped = false }: PositionTableProps) {
 
     // OPEN 포지션의 현재가 + 칼만 추세 조회
     if (status === 'OPEN') {
+      // 공유 시세 갱신 (모든 컴포넌트에 반영)
+      await refreshPrices()
+
+      // 상세 시세 데이터(전일대비 등)는 개별 조회
       const openPositions = positions.filter(p => p.status === 'OPEN')
       const pricePromises = openPositions.map(async (pos) => {
         try {
@@ -89,7 +95,7 @@ export function PositionTable({ status, grouped = false }: PositionTableProps) {
     }
 
     setRefreshing(false)
-  }, [refetch, positions, status])
+  }, [refetch, positions, status, refreshPrices])
 
   if (loading) return <SkeletonTable rows={6} />
   if (error) return <p className="text-xs text-[#f87171] py-4">로드 오류: {error}</p>
@@ -127,10 +133,13 @@ export function PositionTable({ status, grouped = false }: PositionTableProps) {
     const phaseToken = pos.phase_at_buy ? getPhaseToken(pos.phase_at_buy) : null
     const pnl = pos.result_pct ?? null
     const live = livePrice[pos.code]
+    const sharedPrice = sharedPrices[pos.code]
     const curPrice = live ? live.price : (
-      pnl != null && pos.avg_price > 0
-        ? Math.round(pos.avg_price * (1 + pnl / 100))
-        : null
+      sharedPrice ? sharedPrice : (
+        pnl != null && pos.avg_price > 0
+          ? Math.round(pos.avg_price * (1 + pnl / 100))
+          : null
+      )
     )
     const livePnl = live && pos.avg_price > 0
       ? ((live.price - pos.avg_price) / pos.avg_price) * 100

@@ -154,6 +154,10 @@ export interface AccountSummary {
   erng_rt: number
   mode: TradeMode
   created_at: string
+  // 원장 기반 잔액 관리
+  ledger_cash_amt?: number
+  discrepancy_amt?: number
+  reconciled?: boolean
 }
 
 // position_analyses 테이블

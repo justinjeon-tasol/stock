@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, ChevronDown, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { useAccountSummary } from '@/hooks/useAccountSummary'
-import { usePositions } from '@/hooks/usePositions'
+import { useSharedRealtime } from '@/providers/SharedRealtimeProvider'
 import { DataSourceBadge } from '@/components/account/DataSourceBadge'
 import { KISTradeHistory } from '@/components/account/KISTradeHistory'
 import { InvestmentAnalysis } from '@/components/account/InvestmentAnalysis'
@@ -31,35 +30,19 @@ export default function AccountPage() {
   const [tab, setTab] = useState<TabType>('balance')
   const [historyView, setHistoryView] = useState<HistoryView>('kis')
 
-  // DB 기반 (primary)
-  const { summary: sbSummary, loading: sbLoading, refetch: refetchSB } = useAccountSummary()
-  const { positions, refetch: refetchPositions } = usePositions({ status: 'OPEN' })
-  const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({})
+  // 공유 실시간 데이터 (단일 소스)
+  const { accountSummary: sbSummary, positions: allPositions, currentPrices, refresh, refreshPrices } = useSharedRealtime()
+  const positions = allPositions.filter((p) => p.status === 'OPEN')
+  const sbLoading = sbSummary === null
   const [priceLoading, setPriceLoading] = useState(false)
 
   const dataSource: DataSource = sbSummary ? 'SUPABASE' : 'SUPABASE'
 
-  // 현재 시세 조회 (참고용)
   const fetchPrices = useCallback(async () => {
-    if (positions.length === 0) return
     setPriceLoading(true)
-    const prices: Record<string, number> = {}
-    for (const pos of positions) {
-      try {
-        const resp = await fetch(`/api/kis/price?code=${pos.code}`)
-        if (resp.ok) {
-          const data = await resp.json()
-          if (data.price > 0) prices[pos.code] = data.price
-        }
-      } catch { /* ignore */ }
-    }
-    setCurrentPrices(prices)
+    await refreshPrices()
     setPriceLoading(false)
-  }, [positions])
-
-  useEffect(() => {
-    if (positions.length > 0) fetchPrices()
-  }, [positions.length, fetchPrices])
+  }, [refreshPrices])
 
   // History tab (일별 요약)
   const [history, setHistory] = useState<AccountHistory[]>([])
@@ -94,11 +77,10 @@ export default function AccountPage() {
   }, [tab, historyView, days, fetchHistory])
 
   const handleRefresh = useCallback(() => {
-    refetchSB()
-    refetchPositions()
+    refresh()
     fetchPrices()
     if (tab === 'history' && historyView === 'daily') fetchHistory()
-  }, [refetchSB, refetchPositions, fetchPrices, tab, historyView, fetchHistory])
+  }, [refresh, fetchPrices, tab, historyView, fetchHistory])
 
   const loading = sbLoading || priceLoading
 
@@ -156,9 +138,9 @@ export default function AccountPage() {
                 <table className="w-full text-sm">
                   <tbody>
                     <tr className="border-b border-[#2a2a38]">
-                      <SummaryCell label="예수금(현금)" value={formatKRW(sbSummary.cash_amt)} />
+                      <SummaryCell label="예수금(현금)" value={formatKRW(sbSummary.ledger_cash_amt ?? sbSummary.cash_amt)} />
                       <SummaryCell label="유가평가액" value={formatKRW(stockEvluAmt)} />
-                      <SummaryCell label="총평가금액" value={formatKRW(sbSummary.cash_amt + stockEvluAmt)} highlight />
+                      <SummaryCell label="총평가금액" value={formatKRW((sbSummary.ledger_cash_amt ?? sbSummary.cash_amt) + stockEvluAmt)} highlight />
                     </tr>
                     <tr>
                       <SummaryCell label="매입금액" value={formatKRW(pchsAmt)} />
