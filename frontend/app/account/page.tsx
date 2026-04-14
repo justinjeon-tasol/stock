@@ -367,7 +367,7 @@ function HistoryRow({ row, isExpanded, dayPnlPos, trades, onClick }: {
                 <tbody>
                   {(trades ?? []).map((t) => (
                     <tr key={t.id} className="border-b border-[#1e1e2a]">
-                      <td className="py-1.5 px-2 text-[#555570]">{t.created_at.slice(11, 16)}</td>
+                      <td className="py-1.5 px-2 text-[#555570]">{(typeof t.created_at === 'string' ? t.created_at : new Date(t.created_at).toISOString()).slice(11, 16)}</td>
                       <td className="py-1.5 px-2 font-medium" style={{ color: t.action === 'BUY' ? '#60a5fa' : '#f87171' }}>
                         {t.action === 'BUY' ? '매수' : '매도'}
                       </td>

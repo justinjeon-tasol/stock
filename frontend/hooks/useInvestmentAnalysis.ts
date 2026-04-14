@@ -29,7 +29,8 @@ export function useInvestmentAnalysis({ trades }: AnalysisInput): AnalysisResult
     // ─── 월별 수익률 ───
     const monthMap = new Map<string, { returns: number[]; count: number; wins: number }>()
     for (const t of sellTradesWithPnl) {
-      const month = t.created_at.slice(0, 7) // "YYYY-MM"
+      const ca = typeof t.created_at === 'string' ? t.created_at : new Date(t.created_at).toISOString()
+      const month = ca.slice(0, 7) // "YYYY-MM"
       const entry = monthMap.get(month) || { returns: [], count: 0, wins: 0 }
       entry.returns.push(t.result_pct!)
       entry.count++

@@ -159,15 +159,17 @@ export function SharedRealtimeProvider({ children }: { children: ReactNode }) {
         "postgres_changes",
         { event: "*", schema: "public", table: "market_phases" },
         (payload) => {
-          setMarketPhase(payload.new as MarketPhase);
-          setLastUpdated((prev) => ({ ...prev, marketPhase: new Date() }));
+          if (payload.new && typeof payload.new === "object" && "phase" in payload.new) {
+            setMarketPhase(payload.new as MarketPhase);
+            setLastUpdated((prev) => ({ ...prev, marketPhase: new Date() }));
+          }
         }
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "account_summary" },
         (payload) => {
-          if (payload.new) {
+          if (payload.new && typeof payload.new === "object" && "tot_evlu_amt" in payload.new) {
             setAccountSummary(payload.new as AccountSummary);
             setLastUpdated((prev) => ({
               ...prev,
