@@ -1952,11 +1952,11 @@ class Executor(BaseAgent):
             if pchs_amt > 0:
                 evlu_pfls_amt = stock_evlu_amt - pchs_amt
                 erng_rt       = evlu_pfls_amt / pchs_amt
-                # 예수금 = 원금(dnca_tot_amt) - 실제 매수원가
-                # KIS tot_evlu_amt는 KIS 자체 기준가로 이미 손익이 반영된 값이라 사용 불가.
-                # dnca_tot_amt는 모의투자에서 원금(5천만원)으로 고정되어 신뢰할 수 있음.
-                initial_capital = int(d.get("dnca_tot_amt", 0) or 0)
-                cash_amt     = max(0, initial_capital - int(pchs_amt))
+                # 예수금: KIS tot_evlu_amt(실현손익 반영된 총자산)에서
+                # KIS 자체 주식평가금액을 빼서 실제 현금을 역산한다.
+                # 기존 방식(dnca_tot_amt - pchs_amt)은 실현손실 누적이 빠져 과대 계산됨.
+                kis_stock_evlu = int(d.get("scts_evlu_amt", 0) or 0)
+                cash_amt     = max(0, kis_tot_evlu - kis_stock_evlu)
                 tot_evlu_amt = cash_amt + int(stock_evlu_amt)
             else:
                 # 포지션 없거나 현재가 조회 실패 → KIS 값 그대로 사용
