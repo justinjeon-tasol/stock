@@ -84,19 +84,30 @@ def save_trade(order_result: dict, signal: dict) -> Optional[str]:
             record_id = str(uuid.uuid4())
             raw_pct = result.get("result_pct")
             result_pct = float(raw_pct) if raw_pct is not None else (None if action == "BUY" else 0.0)
+            qty = int(result.get("quantity", 1))
+            price = int(result.get("price", 0))
+            fill_amount = price * qty if price > 0 and qty > 0 else None
+            # 실현손익(원): SELL 시 (체결가 - 평단가) × 수량
+            raw_pnl_amt = result.get("realized_pnl_amt")
+            realized_pnl_amt = int(raw_pnl_amt) if raw_pnl_amt is not None else None
+
             row = {
                 "id":          record_id,
                 "order_id":    order_id,
                 "code":        result.get("code", ""),
                 "name":        result.get("name", ""),
                 "action":      action,
-                "quantity":    int(result.get("quantity", 1)),
-                "price":       int(result.get("price", 0)),
+                "quantity":    qty,
+                "price":       price,
                 "phase":       phase,
                 "result_pct":  result_pct,
                 "mode":        mode,
                 "strategy_id": result.get("strategy_id") or strategy_id,
             }
+            if fill_amount is not None:
+                row["fill_amount"] = fill_amount
+            if realized_pnl_amt is not None:
+                row["realized_pnl_amt"] = realized_pnl_amt
             # 시그널 매트릭스 메타 (NULL 허용 컬럼, 값이 있을 때만 추가)
             for col in ("signal_source", "signal_confidence", "signal_trigger"):
                 val = signal.get(col)
@@ -681,6 +692,9 @@ def save_account_summary(
     evlu_pfls_amt: int,
     erng_rt: float,
     mode: str = "MOCK",
+    ledger_cash_amt: int = None,
+    discrepancy_amt: int = None,
+    reconciled: bool = None,
 ) -> Optional[str]:
     """
     account_summary 테이블에 계좌 잔고 저장.
@@ -706,6 +720,12 @@ def save_account_summary(
             "erng_rt":       round(erng_rt, 6),
             "mode":          mode,
         }
+        if ledger_cash_amt is not None:
+            row["ledger_cash_amt"] = ledger_cash_amt
+        if discrepancy_amt is not None:
+            row["discrepancy_amt"] = discrepancy_amt
+        if reconciled is not None:
+            row["reconciled"] = reconciled
         result = client.table("account_summary").insert(row).execute()
         if result.data:
             return str(result.data[0].get("id", ""))
@@ -1345,3 +1365,218 @@ def save_prediction_log(data: dict):
     except Exception as e:
         logger.warning(f"[db] save_prediction_log 실패: {e}")
         return None
+
+
+# ---------------------------------------------------------------------------
+# 현금 원장 (Cash Ledger)
+# ---------------------------------------------------------------------------
+
+_INITIAL_CAPITAL = 50_000_000  # 초기 자본금
+
+
+def get_cash_balance() -> int:
+    """
+    cash_ledger에서 최신 잔액을 반환한다.
+    원장이 비어있으면 초기 자본금을 반환.
+
+    Returns
+    -------
+    int
+        현재 현금 잔액 (원).
+    """
+    client = _get_client()
+    if client is None:
+        return _INITIAL_CAPITAL
+    try:
+        result = (
+            client.table("cash_ledger")
+            .select("balance_after")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            return int(result.data[0]["balance_after"])
+        return _INITIAL_CAPITAL
+    except Exception as e:
+        logger.warning(f"[db] get_cash_balance 실패: {e}")
+        return _INITIAL_CAPITAL
+
+
+def append_cash_ledger(
+    entry_type: str,
+    amount: int,
+    ref_trade_id: str = None,
+    ref_order_id: str = None,
+    code: str = None,
+    name: str = None,
+    quantity: int = None,
+    price: int = None,
+    note: str = None,
+    mode: str = "MOCK",
+) -> Optional[int]:
+    """
+    cash_ledger에 항목을 추가한다. RPC 함수를 사용하여 원자적으로 실행.
+
+    Parameters
+    ----------
+    entry_type : 'INITIAL', 'BUY', 'SELL', 'ADJUSTMENT'
+    amount     : 양수=입금/매도, 음수=매수
+    ...
+
+    Returns
+    -------
+    int | None
+        거래 후 잔액 (balance_after). 실패 시 None.
+    """
+    client = _get_client()
+    if client is None:
+        logger.debug("[db] append_cash_ledger: Supabase 미설정, 건너뜀")
+        return None
+    try:
+        params = {
+            "p_entry_type": entry_type,
+            "p_amount": amount,
+            "p_mode": mode,
+        }
+        if ref_trade_id:
+            params["p_ref_trade_id"] = ref_trade_id
+        if ref_order_id:
+            params["p_ref_order_id"] = ref_order_id
+        if code:
+            params["p_code"] = code
+        if name:
+            params["p_name"] = name
+        if quantity is not None:
+            params["p_quantity"] = quantity
+        if price is not None:
+            params["p_price"] = price
+        if note:
+            params["p_note"] = note
+
+        result = client.rpc("append_cash_ledger", params).execute()
+        if result.data:
+            balance = int(result.data[0]["balance_after"])
+            logger.info(
+                f"[db] 원장 기록: {entry_type} {amount:+,}원 → 잔액 {balance:,}원"
+                f" [{code or ''} {name or ''}]"
+            )
+            return balance
+        return None
+    except Exception as e:
+        logger.warning(f"[db] append_cash_ledger 실패: {e}")
+        # RPC 실패 시 직접 삽입 fallback
+        return _append_cash_ledger_fallback(
+            entry_type, amount, ref_trade_id, ref_order_id,
+            code, name, quantity, price, note, mode,
+        )
+
+
+def _append_cash_ledger_fallback(
+    entry_type, amount, ref_trade_id, ref_order_id,
+    code, name, quantity, price, note, mode,
+) -> Optional[int]:
+    """RPC 함수 미설치 시 직접 삽입 fallback."""
+    client = _get_client()
+    if client is None:
+        return None
+    try:
+        current_balance = get_cash_balance()
+        new_balance = current_balance + amount
+        row = {
+            "id": str(uuid.uuid4()),
+            "entry_type": entry_type,
+            "amount": amount,
+            "balance_after": new_balance,
+            "mode": mode,
+        }
+        if ref_trade_id:
+            row["ref_trade_id"] = ref_trade_id
+        if ref_order_id:
+            row["ref_order_id"] = ref_order_id
+        if code:
+            row["code"] = code
+        if name:
+            row["name"] = name
+        if quantity is not None:
+            row["quantity"] = quantity
+        if price is not None:
+            row["price"] = price
+        if note:
+            row["note"] = note
+        client.table("cash_ledger").insert(row).execute()
+        logger.info(
+            f"[db] 원장 기록(fallback): {entry_type} {amount:+,}원 → 잔액 {new_balance:,}원"
+        )
+        return new_balance
+    except Exception as e:
+        logger.warning(f"[db] _append_cash_ledger_fallback 실패: {e}")
+        return None
+
+
+def initialize_cash_ledger(
+    initial_capital: int = _INITIAL_CAPITAL,
+    mode: str = "MOCK",
+) -> Optional[int]:
+    """
+    원장 초기화. 이미 항목이 있으면 건너뜀.
+
+    Returns
+    -------
+    int | None
+        초기 잔액. 이미 초기화된 경우 현재 잔액.
+    """
+    client = _get_client()
+    if client is None:
+        return None
+    try:
+        existing = (
+            client.table("cash_ledger")
+            .select("id")
+            .limit(1)
+            .execute()
+        )
+        if existing.data:
+            logger.info("[db] 원장 이미 초기화됨 → 건너뜀")
+            return get_cash_balance()
+
+        return append_cash_ledger(
+            entry_type="INITIAL",
+            amount=initial_capital,
+            note="초기 자본금",
+            mode=mode,
+        )
+    except Exception as e:
+        logger.warning(f"[db] initialize_cash_ledger 실패: {e}")
+        return None
+
+
+def get_today_realized_pnl_amt() -> int:
+    """
+    오늘 매도 거래의 실현손익 합산 (원 단위).
+    trades.realized_pnl_amt 컬럼 기반.
+
+    Returns
+    -------
+    int
+        오늘 실현 손익 (원). 양수=이익, 음수=손실.
+    """
+    client = _get_client()
+    if client is None:
+        return 0
+    try:
+        from datetime import datetime, timezone
+        today = datetime.now(timezone.utc).date().isoformat()
+        result = (
+            client.table("trades")
+            .select("realized_pnl_amt")
+            .eq("action", "SELL")
+            .gte("created_at", today)
+            .execute()
+        )
+        if not result.data:
+            return 0
+        return sum(int(r.get("realized_pnl_amt", 0) or 0) for r in result.data)
+    except Exception as e:
+        logger.warning(f"[db] get_today_realized_pnl_amt 실패: {e}")
+        return 0

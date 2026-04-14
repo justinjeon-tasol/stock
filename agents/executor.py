@@ -582,6 +582,7 @@ class Executor(BaseAgent):
                                 self._position_manager.close_position(
                                     position_id, filled_price, "EMERGENCY_STOP_LOSS"
                                 )
+                                _emg_pnl_amt = int((filled_price - avg_price) * filled_qty)
                                 save_trade(
                                     {"order_id": sell_order.get("order_no", ""), "action": "SELL",
                                      "results": [{
@@ -590,10 +591,23 @@ class Executor(BaseAgent):
                                          "quantity": filled_qty, "price": int(filled_price),
                                          "strategy_id": pos.get("strategy_id"),
                                          "result_pct": result_pct,
+                                         "realized_pnl_amt": _emg_pnl_amt,
                                      }],
                                      "mode": "MOCK" if self._is_mock else "REAL"},
                                     {"phase": current_phase, "strategy_id": pos.get("strategy_id"),
                                      "sell_reason": "EMERGENCY_STOP_LOSS"},
+                                )
+                                # 원장 기록: 긴급손절 매도 대금
+                                from database.db import append_cash_ledger as _emg_ledger
+                                _emg_ledger(
+                                    entry_type="SELL",
+                                    amount=int(filled_price) * filled_qty,
+                                    ref_order_id=sell_order.get("order_no", ""),
+                                    code=code, name=name,
+                                    quantity=filled_qty,
+                                    price=int(filled_price),
+                                    note=f"긴급손절 {name}({code}) {filled_qty}주 {result_pct:+.2f}%",
+                                    mode="MOCK" if self._is_mock else "REAL",
                                 )
                                 closed_count += 1
                             else:
@@ -677,6 +691,7 @@ class Executor(BaseAgent):
                     result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
                     self._position_manager.close_position_by_id(position_id, exit_reason, result_pct)
                     # SELL trades 레코드 생성
+                    _exit_pnl_amt = int((filled_price - avg_price) * filled_qty)
                     save_trade(
                         {"order_id": sell_order.get("order_no", ""), "action": "SELL",
                          "results": [{
@@ -685,10 +700,23 @@ class Executor(BaseAgent):
                              "quantity": filled_qty, "price": int(filled_price),
                              "strategy_id": pos.get("strategy_id"),
                              "result_pct": result_pct,
+                             "realized_pnl_amt": _exit_pnl_amt,
                          }],
                          "mode": "MOCK" if self._is_mock else "REAL"},
                         {"phase": current_phase, "strategy_id": pos.get("strategy_id"),
                          "sell_reason": exit_reason},
+                    )
+                    # 원장 기록: 청산 매도 대금
+                    from database.db import append_cash_ledger as _exit_ledger
+                    _exit_ledger(
+                        entry_type="SELL",
+                        amount=int(filled_price) * filled_qty,
+                        ref_order_id=sell_order.get("order_no", ""),
+                        code=code, name=name,
+                        quantity=filled_qty,
+                        price=int(filled_price),
+                        note=f"{exit_reason} {name}({code}) {filled_qty}주 {result_pct:+.2f}%",
+                        mode="MOCK" if self._is_mock else "REAL",
                     )
                     self.log("info", f"[청산] {name}({code}) 종료 완료: {result_pct:+.2f}%")
                     closed_count += 1
@@ -803,7 +831,7 @@ class Executor(BaseAgent):
                                         _dca_strat = _pr.data[0].get("strategy_id") or "DCA"
                             except Exception:
                                 pass
-                        save_trade(
+                        dca_trade_id = save_trade(
                             {
                                 "order_id": order_result.get("order_no", ""),
                                 "action": "BUY",
@@ -821,6 +849,20 @@ class Executor(BaseAgent):
                                 "strategy_id": _dca_strat,
                                 "signal_source": "DCA_STAGE2",
                             },
+                        )
+                        # 원장 기록: DCA 2차 매수 대금 출금
+                        from database.db import append_cash_ledger
+                        dca_buy_amount = int(filled_price) * filled_qty
+                        append_cash_ledger(
+                            entry_type="BUY",
+                            amount=-dca_buy_amount,
+                            ref_trade_id=dca_trade_id,
+                            ref_order_id=order_result.get("order_no", ""),
+                            code=code, name=name,
+                            quantity=filled_qty,
+                            price=int(filled_price),
+                            note=f"DCA 2차 {name}({code}) {filled_qty}주 @ {int(filled_price):,}원",
+                            mode="MOCK" if self._is_mock else "REAL",
                         )
                     except Exception as exc:
                         self.log("warning", f"[DCA] {name}({code}) trades 기록 실패: {exc}")
@@ -946,18 +988,34 @@ class Executor(BaseAgent):
 
         # trade 저장
         result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
+        realized_pnl_amt = int((filled_price - avg_price) * filled_qty)
         r = {
             "code": code, "name": name, "status": "OK",
             "order_no": sell_order.get("order_no", ""),
             "quantity": filled_qty, "price": int(filled_price),
             "strategy_id": position.get("strategy_id"),
             "result_pct": result_pct,
+            "realized_pnl_amt": realized_pnl_amt,
         }
-        save_trade(
+        partial_trade_id = save_trade(
             {"order_id": sell_order.get("order_no", ""), "action": "SELL",
              "results": [r], "mode": "MOCK" if self._is_mock else "REAL"},
             {"phase": "", "strategy_id": position.get("strategy_id"),
              "sell_reason": f"PARTIAL_TP_STAGE_{new_stage}"},
+        )
+        # 원장 기록: 분할 매도 대금 입금
+        from database.db import append_cash_ledger
+        sell_amount = int(filled_price) * filled_qty
+        append_cash_ledger(
+            entry_type="SELL",
+            amount=sell_amount,
+            ref_trade_id=partial_trade_id,
+            ref_order_id=sell_order.get("order_no", ""),
+            code=code, name=name,
+            quantity=filled_qty,
+            price=int(filled_price),
+            note=f"분할익절 {new_stage}차 {name}({code}) {filled_qty}주 @ {int(filled_price):,}원 {result_pct:+.2f}%",
+            mode="MOCK" if self._is_mock else "REAL",
         )
 
         # 텔레그램 알림
@@ -1124,6 +1182,7 @@ class Executor(BaseAgent):
                 self._update_position_partial_sell(position_id, actual_remaining, 0)
 
             # trade 저장
+            _ep_pnl_amt = int((filled_price - avg_price_val) * filled_qty)
             save_trade(
                 {"order_id": sell_order.get("order_no", ""), "action": "SELL",
                  "results": [{
@@ -1132,10 +1191,23 @@ class Executor(BaseAgent):
                      "quantity": filled_qty, "price": int(filled_price),
                      "strategy_id": pos.get("strategy_id"),
                      "result_pct": result_pct,
+                     "realized_pnl_amt": _ep_pnl_amt,
                  }],
                  "mode": "MOCK" if self._is_mock else "REAL"},
                 {"phase": current_phase, "strategy_id": pos.get("strategy_id"),
                  "sell_reason": f"EXIT_PLAN_STAGE_{i+1}"},
+            )
+            # 원장 기록: exit_plan 매도 대금
+            from database.db import append_cash_ledger as _ep_ledger
+            _ep_ledger(
+                entry_type="SELL",
+                amount=int(filled_price) * filled_qty,
+                ref_order_id=sell_order.get("order_no", ""),
+                code=code, name=name,
+                quantity=filled_qty,
+                price=int(filled_price),
+                note=f"EXIT_PLAN stage {i+1} {name}({code}) {filled_qty}주 {result_pct:+.2f}%",
+                mode="MOCK" if self._is_mock else "REAL",
             )
 
             await self._send_telegram(
@@ -1456,6 +1528,7 @@ class Executor(BaseAgent):
                         "info",
                         f"SELL 체결: {name}({code}) {filled_qty}주 @ {filled_price:,.0f}원 {result_pct:+.2f}% [{sell_reason}]",
                     )
+                    realized_pnl_amt = int((filled_price - avg_price) * filled_qty)
                     sell_r = {
                         "code":       code,
                         "name":       name,
@@ -1466,12 +1539,27 @@ class Executor(BaseAgent):
                         "price":      int(filled_price),
                         "strategy_id": strategy_id,
                         "result_pct": result_pct,
+                        "realized_pnl_amt": realized_pnl_amt,
                     }
-                    save_trade(
+                    sell_trade_id = save_trade(
                         {"order_id": sell_order.get("order_no", ""), "action": "SELL",
                          "results": [sell_r], "mode": "MOCK" if self._is_mock else "REAL"},
                         {"phase": phase, "strategy_id": strategy_id,
                          "sell_reason": sell_reason},
+                    )
+                    # 원장 기록: 매도 대금 입금
+                    from database.db import append_cash_ledger
+                    sell_amount = int(filled_price) * filled_qty
+                    append_cash_ledger(
+                        entry_type="SELL",
+                        amount=sell_amount,
+                        ref_trade_id=sell_trade_id,
+                        ref_order_id=sell_order.get("order_no", ""),
+                        code=code, name=name,
+                        quantity=filled_qty,
+                        price=int(filled_price),
+                        note=f"SELL {name}({code}) {filled_qty}주 @ {int(filled_price):,}원 {result_pct:+.2f}% [{sell_reason}]",
+                        mode="MOCK" if self._is_mock else "REAL",
                     )
 
                 sell_results.append({
@@ -1692,6 +1780,20 @@ class Executor(BaseAgent):
                             "backtest_expected_return": t.get("expected_return"),
                         }
                         trade_id = save_trade(trade_payload, signal_payload)
+                        # 원장 기록: 매수 대금 출금
+                        from database.db import append_cash_ledger
+                        buy_amount = int(avg_price) * filled_qty
+                        append_cash_ledger(
+                            entry_type="BUY",
+                            amount=-buy_amount,
+                            ref_trade_id=trade_id,
+                            ref_order_id=r["order_no"],
+                            code=code, name=name,
+                            quantity=filled_qty,
+                            price=int(avg_price),
+                            note=f"BUY {name}({code}) {filled_qty}주 @ {int(avg_price):,}원",
+                            mode="MOCK" if self._is_mock else "REAL",
+                        )
                         self._position_manager.open_position(
                             code=code,
                             name=name,
@@ -1949,32 +2051,46 @@ class Executor(BaseAgent):
                     pchs_amt       += avg * qty
                     stock_evlu_amt += float(cur) * qty
 
+            # ── 원장 기반 현금 잔액 (DB source of truth) ──
+            from database.db import get_cash_balance
+            ledger_cash = get_cash_balance()
+
+            # KIS 역산 현금 (검증용)
+            kis_stock_evlu = int(d.get("scts_evlu_amt", 0) or 0)
+            kis_cash = max(0, kis_tot_evlu - kis_stock_evlu)
+
             if pchs_amt > 0:
                 evlu_pfls_amt = stock_evlu_amt - pchs_amt
                 erng_rt       = evlu_pfls_amt / pchs_amt
-                # 예수금: KIS tot_evlu_amt(실현손익 반영된 총자산)에서
-                # KIS 자체 주식평가금액을 빼서 실제 현금을 역산한다.
-                # 기존 방식(dnca_tot_amt - pchs_amt)은 실현손실 누적이 빠져 과대 계산됨.
-                kis_stock_evlu = int(d.get("scts_evlu_amt", 0) or 0)
-                cash_amt     = max(0, kis_tot_evlu - kis_stock_evlu)
-                tot_evlu_amt = cash_amt + int(stock_evlu_amt)
             else:
-                # 포지션 없거나 현재가 조회 실패 → KIS 값 그대로 사용
+                # 포지션 없거나 현재가 조회 실패 → KIS 값으로 평가
                 pchs_amt       = int(d.get("pchs_amt_smtl_amt",  0) or 0)
                 stock_evlu_amt = int(d.get("scts_evlu_amt",      0) or 0)
                 evlu_pfls_amt  = int(d.get("evlu_pfls_smtl_amt", 0) or 0)
                 erng_rt        = evlu_pfls_amt / pchs_amt if pchs_amt else 0.0
-                cash_amt       = int(d.get("dnca_tot_amt", 0) or 0)
-                tot_evlu_amt   = kis_tot_evlu
+
+            # 원장 현금을 기본 사용, KIS와 차이 기록
+            cash_amt = ledger_cash
+            tot_evlu_amt = cash_amt + int(stock_evlu_amt)
+            discrepancy = kis_cash - ledger_cash
+            reconciled = abs(discrepancy) <= 100_000  # 10만원 이내면 일치
+
+            if not reconciled:
+                self.log("warning",
+                    f"[계좌] 현금 불일치: 원장={ledger_cash:,} vs KIS={kis_cash:,} "
+                    f"(차이={discrepancy:+,}원)")
 
             return {
-                "cash_amt":       cash_amt,
-                "stock_evlu_amt": int(stock_evlu_amt),
-                "tot_evlu_amt":   tot_evlu_amt,
-                "pchs_amt":       int(pchs_amt),
-                "evlu_pfls_amt":  int(evlu_pfls_amt),
-                "erng_rt":        round(erng_rt, 6),
-                "mode":           "MOCK" if self._is_mock else "REAL",
+                "cash_amt":         cash_amt,
+                "stock_evlu_amt":   int(stock_evlu_amt),
+                "tot_evlu_amt":     tot_evlu_amt,
+                "pchs_amt":         int(pchs_amt),
+                "evlu_pfls_amt":    int(evlu_pfls_amt),
+                "erng_rt":          round(erng_rt, 6),
+                "mode":             "MOCK" if self._is_mock else "REAL",
+                "ledger_cash_amt":  ledger_cash,
+                "discrepancy_amt":  discrepancy,
+                "reconciled":       reconciled,
             }
         except Exception as exc:
             self.log("warning", f"계좌 잔고 조회 실패: {exc}")
