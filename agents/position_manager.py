@@ -284,10 +284,12 @@ class PositionManager:
                 if avg_price <= 0:
                     continue
 
-                # 현재가 조회: kr_market 우선, yfinance fallback (±20% 가드 적용)
+                # 현재가 조회: kr_market → pykrx(KRX) → yfinance (±20% 가드)
                 cur_price = current_prices.get(code)
                 if cur_price:
                     cur_price = float(cur_price)
+                if not cur_price or cur_price <= 0:
+                    cur_price = self._fetch_price_pykrx(code)
                 if not cur_price or cur_price <= 0:
                     yf_price = self._fetch_price_yfinance(code)
                     if yf_price and yf_price > 0:
@@ -301,7 +303,7 @@ class PositionManager:
                             continue
                         cur_price = yf_price
                     else:
-                        cur_price = avg_price  # 조회 실패 시 fallback (0%로 표시)
+                        cur_price = avg_price  # 전부 실패 시 fallback (0%로 표시)
 
                 pnl_pct   = (cur_price - avg_price) / avg_price * 100
 
@@ -426,7 +428,14 @@ class PositionManager:
             self._price_cache[code] = (kis_price, time.time())
             return kis_price
 
-        # 2순위: yfinance fallback (KIS 실패 시에만)
+        # 2순위: pykrx (KRX 공식 데이터) — KIS보다 느리지만 정확
+        krx_price = self._fetch_price_pykrx(code)
+        if krx_price and krx_price > 0:
+            logger.info(f"[시세] {code} KIS 실패 → pykrx(KRX) fallback: {krx_price:,.0f}원")
+            self._price_cache[code] = (krx_price, time.time())
+            return krx_price
+
+        # 3순위: yfinance (최후 fallback, 부정확할 수 있음)
         yf_price = self._fetch_price_yfinance(code)
         if yf_price and yf_price > 0:
             # 매입가 대비 ±20% 이상 차이나면 yfinance 가격이 부정확한 것으로 판단
@@ -438,7 +447,7 @@ class PositionManager:
                         f"{yf_price:,.0f}원 vs 매입 {avg_price:,.0f}원 "
                         f"(차이 {deviation*100:.1f}%) → 사용 안 함")
                     return None
-            logger.info(f"[시세] {code} KIS 실패 → yfinance fallback: {yf_price:,.0f}원")
+            logger.info(f"[시세] {code} KIS+pykrx 실패 → yfinance fallback: {yf_price:,.0f}원")
             self._price_cache[code] = (yf_price, time.time())
             return yf_price
 
@@ -482,8 +491,24 @@ class PositionManager:
             logger.debug(f"[시세] KIS 시세 조회 실패 {code}: {exc}")
             return None
 
+    def _fetch_price_pykrx(self, code: str) -> Optional[float]:
+        """pykrx(KRX 공식 데이터)로 한국 주식 현재가 조회. KIS 다음 2순위 fallback."""
+        try:
+            from pykrx import stock
+            from datetime import datetime, timedelta
+            today = datetime.now().strftime("%Y%m%d")
+            yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
+            df = stock.get_market_ohlcv(yesterday, today, code)
+            if not df.empty:
+                price = int(df.iloc[-1].iloc[3])  # 종가
+                if price > 0:
+                    return float(price)
+        except Exception as exc:
+            logger.debug(f"[시세] pykrx 시세 조회 실패 {code}: {exc}")
+        return None
+
     def _fetch_price_yfinance(self, code: str) -> Optional[float]:
-        """yfinance로 한국 주식 현재가 조회 (fallback). KRX 종목은 code.KS 접미사 사용."""
+        """yfinance로 한국 주식 현재가 조회 (최후 fallback). KRX 종목은 code.KS 접미사 사용."""
         try:
             import yfinance as yf
             ticker = yf.Ticker(f"{code}.KS")
