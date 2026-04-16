@@ -1687,20 +1687,22 @@ class Executor(BaseAgent):
                                     })
                                     continue
 
-                                # 추격매수 방지: 마지막 매도가 대비 +2% 이상이면 SKIP
+                                # 추격매수 방지: 매도 후 24시간 이내 + 매도가 대비 +2% 이상이면 SKIP
+                                # 24시간 이후에는 추격매수 방지 해제 (상승 추세 재진입 허용)
                                 last_sell_price = float(last_sell.get("price", 0))
-                                if last_sell_price > 0:
+                                if last_sell_price > 0 and hours_since_sell < 24.0:
                                     cur_px = await self._position_manager.fetch_current_price(
                                         token, code
                                     )
                                     if cur_px and cur_px > last_sell_price * 1.02:
                                         self.log("info",
                                             f"{name}({code}) 추격매수 방지: "
-                                            f"현재가 {cur_px:,.0f} > 매도가 {last_sell_price:,.0f}×1.02")
+                                            f"현재가 {cur_px:,.0f} > 매도가 {last_sell_price:,.0f}×1.02 "
+                                            f"(매도 후 {hours_since_sell:.1f}h, 24h 내)")
                                         results.append({
                                             "code": code, "name": name,
                                             "status": "SKIP", "order_no": "",
-                                            "message": "추격매수 방지 (+2% 초과)",
+                                            "message": f"추격매수 방지 (+2% 초과, {hours_since_sell:.0f}h/{24}h)",
                                         })
                                         continue
                     except Exception as _cool_exc:

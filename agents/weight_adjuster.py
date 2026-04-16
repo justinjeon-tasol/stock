@@ -1757,11 +1757,19 @@ class WeightAdjuster(BaseAgent):
         """
         전체 보유 포지션에서 reduce_pct% 만큼의 수량을 매도 대상으로 반환.
         전량 매도가 되는 케이스(sell_qty >= quantity)는 건너뜀.
+        중기/장기 포지션은 REDUCE 대상에서 제외 (TP/SL/트레일링으로만 관리).
         """
         open_positions = self._position_manager.get_open_positions()
         targets = []
         ratio = reduce_pct / 100.0
         for pos in open_positions:
+            # 중기/장기 포지션은 REDUCE 면제 — TP/SL/트레일링으로만 청산
+            hp = pos.get("holding_period", "단기")
+            if hp in ("중기", "장기"):
+                self.log("info",
+                    f"REDUCE 면제: {pos.get('name', '')}({pos.get('code', '')}) "
+                    f"holding_period={hp} → TP/SL로만 관리")
+                continue
             quantity = int(pos.get("quantity", 0))
             sell_qty = max(1, int(quantity * ratio))
             if sell_qty >= quantity:
