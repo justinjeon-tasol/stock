@@ -2071,7 +2071,6 @@ class Executor(BaseAgent):
 
             # 원장 현금을 기본 사용, KIS와 차이 기록
             cash_amt = ledger_cash
-            tot_evlu_amt = cash_amt + int(stock_evlu_amt)
             discrepancy = kis_cash - ledger_cash
             reconciled = abs(discrepancy) <= 100_000  # 10만원 이내면 일치
 
@@ -2079,6 +2078,26 @@ class Executor(BaseAgent):
                 self.log("warning",
                     f"[계좌] 현금 불일치: 원장={ledger_cash:,} vs KIS={kis_cash:,} "
                     f"(차이={discrepancy:+,}원)")
+                # 자동 보정: KIS 잔액 기준으로 원장 ADJUSTMENT
+                try:
+                    from database.db import append_cash_ledger as _append_ledger
+                    new_balance = _append_ledger(
+                        entry_type="ADJUSTMENT",
+                        amount=discrepancy,
+                        note=f"KIS 잔액 자동 보정 (원장={ledger_cash:,} → KIS={kis_cash:,}, 차이={discrepancy:+,}원)",
+                        mode="MOCK" if self._is_mock else "REAL",
+                    )
+                    if new_balance is not None:
+                        self.log("info",
+                            f"[계좌] 원장 자동 보정 완료: {ledger_cash:,} → {new_balance:,}원")
+                        cash_amt = new_balance
+                        ledger_cash = new_balance
+                        discrepancy = kis_cash - new_balance
+                        reconciled = abs(discrepancy) <= 100_000
+                except Exception as adj_err:
+                    self.log("warning", f"[계좌] 자동 보정 실패: {adj_err}")
+
+            tot_evlu_amt = cash_amt + int(stock_evlu_amt)
 
             return {
                 "cash_amt":         cash_amt,
