@@ -284,13 +284,25 @@ class PositionManager:
                 if avg_price <= 0:
                     continue
 
-                # 현재가 조회: kr_market에 없으면 yfinance 직접 조회
+                # 현재가 조회: kr_market 우선, yfinance fallback (±20% 가드 적용)
                 cur_price = current_prices.get(code)
-                if not cur_price or float(cur_price) <= 0:
-                    cur_price = self._fetch_price_yfinance(code)
-                if not cur_price or float(cur_price) <= 0:
-                    cur_price = avg_price  # 조회 실패 시 fallback (0%로 표시)
-                cur_price = float(cur_price)
+                if cur_price:
+                    cur_price = float(cur_price)
+                if not cur_price or cur_price <= 0:
+                    yf_price = self._fetch_price_yfinance(code)
+                    if yf_price and yf_price > 0:
+                        deviation = abs(yf_price - avg_price) / avg_price if avg_price > 0 else 0
+                        if deviation > 0.20:
+                            name = pos.get("name", code)
+                            logger.warning(
+                                f"[포지션] {name}({code}) yfinance 가격 불신: "
+                                f"{yf_price:,.0f}원 vs 매입 {avg_price:,.0f}원 "
+                                f"(차이 {deviation*100:.1f}%) → 이번 사이클 스킵")
+                            continue
+                        cur_price = yf_price
+                    else:
+                        cur_price = avg_price  # 조회 실패 시 fallback (0%로 표시)
+
                 pnl_pct   = (cur_price - avg_price) / avg_price * 100
 
                 # result_pct 실시간 갱신 (OPEN 포지션 대시보드 표시용)
@@ -387,12 +399,19 @@ class PositionManager:
     _price_cache: dict = {}
     _PRICE_CACHE_TTL = 10  # 10초 캐시 (API 부하 방지)
 
-    async def fetch_current_price(self, token: str, code: str) -> Optional[float]:
+    async def fetch_current_price(
+        self, token: str, code: str, avg_price: float = 0.0,
+    ) -> Optional[float]:
         """
         현재가 조회. KIS 실시간 시세 API 우선, 실패 시 yfinance fallback.
 
         KIS 실전 서버(openapi.koreainvestment.com)는 모의투자 앱키로도
         시세 조회가 가능하다. TR ID: FHKST01010100 (주식현재가 시세)
+
+        Parameters
+        ----------
+        avg_price : 매입 평균가 (선택). 제공 시 yfinance 가격이 매입가 대비
+                    ±20% 이상 벗어나면 신뢰할 수 없으므로 None 반환.
         """
         # 캐시 확인
         cached = self._price_cache.get(code)
@@ -407,9 +426,18 @@ class PositionManager:
             self._price_cache[code] = (kis_price, time.time())
             return kis_price
 
-        # 2순위: yfinance fallback
+        # 2순위: yfinance fallback (KIS 실패 시에만)
         yf_price = self._fetch_price_yfinance(code)
         if yf_price and yf_price > 0:
+            # 매입가 대비 ±20% 이상 차이나면 yfinance 가격이 부정확한 것으로 판단
+            if avg_price > 0:
+                deviation = abs(yf_price - avg_price) / avg_price
+                if deviation > 0.20:
+                    logger.warning(
+                        f"[시세] {code} yfinance 가격 불신: "
+                        f"{yf_price:,.0f}원 vs 매입 {avg_price:,.0f}원 "
+                        f"(차이 {deviation*100:.1f}%) → 사용 안 함")
+                    return None
             logger.info(f"[시세] {code} KIS 실패 → yfinance fallback: {yf_price:,.0f}원")
             self._price_cache[code] = (yf_price, time.time())
             return yf_price

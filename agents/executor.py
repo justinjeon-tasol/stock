@@ -543,16 +543,19 @@ class Executor(BaseAgent):
                 hp          = pos.get("holding_period", "단기")
                 quantity    = int(pos.get("quantity", 0))
 
-                current_price = await self._position_manager.fetch_current_price(token, code)
+                avg_price = float(pos.get("avg_price", 0))
+                if avg_price <= 0:
+                    continue
+
+                current_price = await self._position_manager.fetch_current_price(
+                    token, code, avg_price=avg_price
+                )
                 if current_price is None:
                     continue
 
                 # 트레일링 스탑용 peak_price 갱신
                 self._position_manager.update_peak_price(pos, current_price)
 
-                avg_price = float(pos.get("avg_price", 0))
-                if avg_price <= 0:
-                    continue
                 pnl_pct = (current_price - avg_price) / avg_price * 100
 
                 # ── 매수 후 보호 시간 체크 (2시간) ──
