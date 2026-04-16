@@ -538,14 +538,19 @@ class Orchestrator:
             # 1. KIS에 있고 Supabase에 없으면 → 포지션 생성
             for code, kis_info in kis_codes.items():
                 if code not in db_codes:
-                    msg = f"[동기화] KIS에만 존재: {kis_info['name']}({code}) {kis_info['quantity']}주 @ {kis_info['avg_price']:,.0f}원 → 포지션 생성"
+                    kis_qty = kis_info["quantity"]
+                    kis_avg = int(kis_info["avg_price"])
+                    kis_name = kis_info["name"]
+                    buy_amount = kis_avg * kis_qty
+
+                    msg = f"[동기화] KIS에만 존재: {kis_name}({code}) {kis_qty}주 @ {kis_avg:,}원 → 포지션 생성"
                     self._logger.info(msg)
                     save_agent_log("OR", "WARNING", msg)
                     self.executor._position_manager.open_position(
                         code=code,
-                        name=kis_info["name"],
-                        quantity=kis_info["quantity"],
-                        avg_price=kis_info["avg_price"],
+                        name=kis_name,
+                        quantity=kis_qty,
+                        avg_price=kis_avg,
                         buy_order_id="SYNC_KIS",
                         phase=self._current_phase or "일반장",
                         mode="MOCK" if self.executor._is_mock else "REAL",
@@ -561,10 +566,10 @@ class Orchestrator:
                                 "action": "BUY",
                                 "results": [{
                                     "code": code,
-                                    "name": kis_info["name"],
+                                    "name": kis_name,
                                     "status": "OK",
-                                    "quantity": kis_info["quantity"],
-                                    "price": int(kis_info["avg_price"]),
+                                    "quantity": kis_qty,
+                                    "price": kis_avg,
                                     "strategy_id": "SYNC_KIS",
                                 }],
                                 "mode": "MOCK" if self.executor._is_mock else "REAL",
@@ -577,12 +582,33 @@ class Orchestrator:
                         )
                     except Exception:
                         pass
+                    # cash_ledger에 매수 비용 기록
+                    try:
+                        from database.db import append_cash_ledger
+                        append_cash_ledger(
+                            entry_type="BUY",
+                            amount=-buy_amount,
+                            ref_order_id="SYNC_KIS",
+                            code=code,
+                            name=kis_name,
+                            quantity=kis_qty,
+                            price=kis_avg,
+                            note=f"KIS_SYNC_BUY {kis_name}({code}) {kis_qty}주 @ {kis_avg:,}원",
+                            mode="MOCK" if self.executor._is_mock else "REAL",
+                        )
+                    except Exception as e:
+                        self._logger.warning(f"[동기화] cash_ledger BUY 기록 실패: {e}")
                     changes += 1
 
             # 2. Supabase OPEN인데 KIS에 없으면 → CLOSED 처리
             for code, db_pos in db_codes.items():
                 if code not in kis_codes:
-                    msg = f"[동기화] KIS에 없음: {db_pos.get('name', '')}({code}) → CLOSED 처리"
+                    pos_name = db_pos.get('name', '')
+                    pos_qty = int(db_pos.get("quantity", 0))
+                    pos_avg = int(float(db_pos.get("avg_price", 0)))
+                    sell_amount = pos_avg * pos_qty
+
+                    msg = f"[동기화] KIS에 없음: {pos_name}({code}) → CLOSED 처리"
                     self._logger.info(msg)
                     save_agent_log("OR", "WARNING", msg)
                     self.executor._position_manager.close_position_by_id(
@@ -597,10 +623,10 @@ class Orchestrator:
                                 "action": "SELL",
                                 "results": [{
                                     "code": code,
-                                    "name": db_pos.get("name", ""),
+                                    "name": pos_name,
                                     "status": "OK",
-                                    "quantity": int(db_pos.get("quantity", 0)),
-                                    "price": int(db_pos.get("avg_price", 0)),
+                                    "quantity": pos_qty,
+                                    "price": pos_avg,
                                     "strategy_id": "SYNC_KIS",
                                     "result_pct": 0.0,
                                 }],
@@ -615,6 +641,22 @@ class Orchestrator:
                         )
                     except Exception:
                         pass
+                    # cash_ledger에 매도 대금 기록
+                    try:
+                        from database.db import append_cash_ledger
+                        append_cash_ledger(
+                            entry_type="SELL",
+                            amount=sell_amount,
+                            ref_order_id="SYNC_KIS",
+                            code=code,
+                            name=pos_name,
+                            quantity=pos_qty,
+                            price=pos_avg,
+                            note=f"KIS_SYNC_CLOSED {pos_name}({code}) {pos_qty}주 @ {pos_avg:,}원",
+                            mode="MOCK" if self.executor._is_mock else "REAL",
+                        )
+                    except Exception as e:
+                        self._logger.warning(f"[동기화] cash_ledger 기록 실패: {e}")
                     changes += 1
 
             # 3. 수량 또는 매입가 불일치 → KIS 기준으로 보정
