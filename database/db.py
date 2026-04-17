@@ -16,6 +16,16 @@ load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)
 
+
+def _current_code_version() -> Optional[str]:
+    """실행 중인 코드 버전 문자열. 조회 실패 시 None (컬럼 생략)."""
+    try:
+        from services.version import get_version
+        v = get_version()
+        return v if v and v != "unknown" else None
+    except Exception:
+        return None
+
 # ---------------------------------------------------------------------------
 # 클라이언트 초기화 (지연 싱글턴)
 # ---------------------------------------------------------------------------
@@ -121,6 +131,10 @@ def save_trade(order_result: dict, signal: dict) -> Optional[str]:
             sell_reason = signal.get("sell_reason")
             if sell_reason and action == "SELL":
                 row["sell_reason"] = sell_reason
+            # 코드 버전 자동 주입 (버전별 성과 비교용)
+            cv = _current_code_version()
+            if cv:
+                row["code_version"] = cv
             client.table("trades").insert(row).execute()
             if first_id is None:
                 first_id = record_id
@@ -314,6 +328,10 @@ def save_position(
         # 포트폴리오 타입 (short/long)
         if portfolio_type:
             row["portfolio_type"] = portfolio_type
+        # 코드 버전 자동 주입 (버전별 성과 비교용)
+        cv = _current_code_version()
+        if cv:
+            row["code_version"] = cv
 
         client.table("positions").insert(row).execute()
         logger.debug(f"[db] save_position: {name}({code}) 저장 완료")

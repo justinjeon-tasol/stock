@@ -70,6 +70,10 @@ def main():
     # 로거 설정
     setup_logging(args.log_level)
 
+    # 코드 버전 로깅 (롤백/성과 비교 추적용)
+    from services.version import get_version
+    logging.getLogger(__name__).info(f"[main] code_version={get_version()} mode={args.mode}")
+
     if args.mode in ("update-history", "fetch-history"):
         _run_history_update(args.mode)
         return
