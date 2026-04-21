@@ -1168,6 +1168,10 @@ def save_exit_plan(plan: dict) -> Optional[str]:
     try:
         position_id = plan.get("position_id")
         if not position_id:
+            logger.error(
+                "[db] save_exit_plan skip: position_id empty (code=%s, plan_type=%s)",
+                plan.get("code"), plan.get("plan_type"),
+            )
             return None
         from datetime import datetime, timezone
         plan["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -1177,7 +1181,13 @@ def save_exit_plan(plan: dict) -> Optional[str]:
         ).execute()
         return result.data[0]["id"] if result.data else None
     except Exception as e:
-        logger.warning(f"[db] save_exit_plan 실패: {e}")
+        # P0-4 Hot Fix (2026-04-21): warning → error 승격
+        # 배경: 2026-04-13 이후 9일간 schema 불일치로 silently 실패했으나 warning이라 감지 못함
+        logger.error(
+            "[db] save_exit_plan 실패 (code=%s, position_id=%s, plan_type=%s): %s",
+            plan.get("code"), plan.get("position_id"), plan.get("plan_type"), e,
+            exc_info=True,
+        )
         return None
 
 

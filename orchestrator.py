@@ -614,6 +614,15 @@ class Orchestrator:
                     self.executor._position_manager.close_position_by_id(
                         db_pos["id"], "KIS_SYNC_CLOSED", 0.0
                     )
+                    # P0-4 Hot Fix (2026-04-21): exit_plan orphan 방지
+                    # 배경: close_position_by_id는 _check_exit_plan 경로와 달리
+                    # delete_exit_plan을 호출하지 않아 orphan row가 남아있었음.
+                    try:
+                        from database.db import delete_exit_plan
+                        delete_exit_plan(db_pos["id"])
+                    except Exception as _del_exc:
+                        self._logger.warning(
+                            "[동기화] exit_plan 삭제 실패 (%s): %s", code, _del_exc)
                     # trades 테이블에 동기화 매도 기록
                     try:
                         from database.db import save_trade

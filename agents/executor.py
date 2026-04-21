@@ -693,6 +693,12 @@ class Executor(BaseAgent):
                     filled_qty = sell_order.get("filled_qty", quantity)
                     result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
                     self._position_manager.close_position_by_id(position_id, exit_reason, result_pct)
+                    # P1-4 (2026-04-21): exit_plan orphan 방지 — 전량 청산이므로 삭제
+                    try:
+                        from database.db import delete_exit_plan
+                        delete_exit_plan(position_id)
+                    except Exception as _del_exc:
+                        self.log("warning", f"[청산] exit_plan 삭제 실패 ({code}): {_del_exc}")
                     # SELL trades 레코드 생성
                     _exit_pnl_amt = int((filled_price - avg_price) * filled_qty)
                     save_trade(
@@ -988,6 +994,12 @@ class Executor(BaseAgent):
                 position_id, f"PARTIAL_TP_STAGE_{new_stage}",
                 self._position_manager.calculate_result_pct(avg_price, filled_price)
             )
+            # P1-4 (2026-04-21): exit_plan orphan 방지 — 마지막 stage에서 전량 청산됨
+            try:
+                from database.db import delete_exit_plan
+                delete_exit_plan(position_id)
+            except Exception as _del_exc:
+                self.log("warning", f"[분할익절] exit_plan 삭제 실패 ({code}): {_del_exc}")
 
         # trade 저장
         result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
@@ -1308,7 +1320,8 @@ class Executor(BaseAgent):
 
         elif trend == "PROFIT_FLAT":
             # 수익 중 + 횡보/하락 예측 → 빠르게 수익 확정
-            s1 = max(avg_price * 1.005, current_price * 1.002)
+            # P1-1 (2026-04-21): 최소 +1.5% 하한 — 상승장에서 조기청산 방지
+            s1 = max(avg_price * 1.015, current_price * 1.002)
             s2 = avg_price * 1.04
             stages = [
                 {"stage": 1, "type": "PARTIAL_TP", "trigger_price": round(s1),
@@ -1320,8 +1333,9 @@ class Executor(BaseAgent):
             ]
 
         elif trend == "RECOVERING":
-            # 손실 중 + 회복 가능성 → 매입가 +1% 이상에서 분할 매도
-            s1 = avg_price * 1.01   # 매입가 +1% (수익 확인 후 매도)
+            # 손실 중 + 회복 가능성 → 매입가 +1.5% 이상에서 분할 매도
+            # P1-1 (2026-04-21): +1% → +1.5% 상향 (조기청산 방지 안전망)
+            s1 = avg_price * 1.015  # 매입가 +1.5% (수익 확인 후 매도)
             s2 = avg_price * 1.03   # 매입가 +3%
             stages = [
                 {"stage": 1, "type": "PARTIAL_TP", "trigger_price": round(s1),
@@ -1507,6 +1521,8 @@ class Executor(BaseAgent):
                     filled_qty = sell_order.get("filled_qty", sell_qty)
                     result_pct = self._position_manager.calculate_result_pct(avg_price, filled_price)
                     if position_id:
+                        # P1-4 (2026-04-21): 전량 청산 여부 플래그 (exit_plan 삭제 여부 결정)
+                        _full_closed = False
                         if sell_reason == "REDUCE_POSITION":
                             # 분할 축소: 포지션 OPEN 유지, 수량만 감소
                             pos_record = self._position_manager.get_position_by_code(code)
@@ -1519,14 +1535,24 @@ class Executor(BaseAgent):
                                     self._position_manager.close_position_by_id(
                                         position_id, sell_reason, result_pct
                                     )
+                                    _full_closed = True
                             else:
                                 self._position_manager.close_position_by_id(
                                     position_id, sell_reason, result_pct
                                 )
+                                _full_closed = True
                         else:
                             self._position_manager.close_position_by_id(
                                 position_id, sell_reason, result_pct
                             )
+                            _full_closed = True
+                        # P1-4 (2026-04-21): exit_plan orphan 방지 — 전량 청산 시만 삭제
+                        if _full_closed:
+                            try:
+                                from database.db import delete_exit_plan
+                                delete_exit_plan(position_id)
+                            except Exception as _del_exc:
+                                self.log("warning", f"[SELL] exit_plan 삭제 실패 ({code}): {_del_exc}")
                     self.log(
                         "info",
                         f"SELL 체결: {name}({code}) {filled_qty}주 @ {filled_price:,.0f}원 {result_pct:+.2f}% [{sell_reason}]",
@@ -1679,16 +1705,54 @@ class Executor(BaseAgent):
                                     datetime.now(timezone.utc) - sell_time
                                 ).total_seconds() / 3600
                                 last_result_pct = float(last_sell.get("result_pct", 0) or 0)
-                                cooldown_hours = 4.0 if last_result_pct < 0 else 1.0
+                                # P1-3 (2026-04-21): 쿨다운 tier화
+                                # - 손실 청산: 4h (기존 유지)
+                                # - 소이익 (< +2%): 3h (기존 1h 상향 — round-trip 방지)
+                                # - 충분한 이익 (>= +2%): 1h
+                                if last_result_pct < 0:
+                                    cooldown_hours = 4.0
+                                elif last_result_pct < 2.0:
+                                    cooldown_hours = 3.0
+                                else:
+                                    cooldown_hours = 1.0
                                 if hours_since_sell < cooldown_hours:
                                     self.log("info",
-                                        f"{name}({code}) 매도 후 {hours_since_sell*60:.0f}분 → 쿨다운 {cooldown_hours}h SKIP")
+                                        f"{name}({code}) 매도 후 {hours_since_sell*60:.0f}분 → 쿨다운 {cooldown_hours}h SKIP "
+                                        f"(직전수익 {last_result_pct:+.2f}%)")
                                     results.append({
                                         "code": code, "name": name,
                                         "status": "SKIP", "order_no": "",
                                         "message": f"재매수 쿨다운 {cooldown_hours}h ({hours_since_sell*60:.0f}분 경과)",
                                     })
                                     continue
+
+                                # P1-3 (2026-04-21): 같은 종목 1일 최대 재진입 2회 제한
+                                # 오늘 BUY 체결 건수를 계산. 이미 2회면 SKIP.
+                                try:
+                                    from datetime import timedelta
+                                    day_start = datetime.now(timezone.utc).replace(
+                                        hour=0, minute=0, second=0, microsecond=0
+                                    )
+                                    buy_count_today = (
+                                        _cooldown_client.table("trades")
+                                        .select("id", count="exact")
+                                        .eq("code", code)
+                                        .eq("action", "BUY")
+                                        .gte("created_at", day_start.isoformat())
+                                        .execute()
+                                    )
+                                    _today_buys = int(buy_count_today.count or 0)
+                                    if _today_buys >= 2:
+                                        self.log("info",
+                                            f"{name}({code}) 당일 매수 {_today_buys}회 → 재진입 한도(2) 초과 SKIP")
+                                        results.append({
+                                            "code": code, "name": name,
+                                            "status": "SKIP", "order_no": "",
+                                            "message": f"당일 재진입 한도 초과 ({_today_buys}/2)",
+                                        })
+                                        continue
+                                except Exception as _rt_exc:
+                                    self.log("warning", f"[round-trip] 체크 실패 ({code}): {_rt_exc}")
 
                                 # 추격매수 방지: 매도 후 24시간 이내 + 매도가 대비 +2% 이상이면 SKIP
                                 # 24시간 이후에는 추격매수 방지 해제 (상승 추세 재진입 허용)
@@ -1852,6 +1916,9 @@ class Executor(BaseAgent):
 
                             pos_record = self._position_manager.get_position_by_code(code)
                             _pid = pos_record.get("id", "") if pos_record else ""
+                            # P0-4 Hot Fix (2026-04-21): 스키마 일치 — last_phase 사용
+                            # 배경: 기존 current_phase는 DB 컬럼에 없어 Supabase upsert가 silently 실패했음.
+                            # plan_type 컬럼은 migration으로 추가 (add_plan_type_to_exit_plans, 2026-04-21).
                             _fixed_plan = {
                                 "position_id": _pid,
                                 "code": code,
@@ -1859,7 +1926,7 @@ class Executor(BaseAgent):
                                 "avg_price": avg_price,
                                 "quantity": filled_qty,
                                 "holding_period": holding_period,
-                                "current_phase": phase,
+                                "last_phase": phase,
                                 "plan_type": "FIXED_AT_BUY",
                                 "exit_stages": _exit_stages,
                                 "dynamic_sl": {
