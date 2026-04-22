@@ -1662,6 +1662,38 @@ class Executor(BaseAgent):
                     if dampen < 1.0:
                         self.log("info", f"{name}({code}) 섹터 감쇠 적용: {dampen:.1f}x → 예산 {adjusted_budget:,.0f}원")
 
+                    # 단일종목 집중도 제한 (CAP): (기존 평가액 + 신규 매수액) ≤ 총자산 × 25%
+                    try:
+                        existing_value = 0.0
+                        for _pos in self._position_manager.get_open_positions():
+                            if _pos.get("code") == code:
+                                _qty = int(_pos.get("quantity", 0) or 0)
+                                _avg = float(_pos.get("avg_price", 0) or 0)
+                                existing_value += _qty * _avg
+                        capped_budget, was_capped = self._risk_manager.check_concentration_limit(
+                            code=code,
+                            new_buy_amount=adjusted_budget,
+                            total_asset=total_assets,
+                            existing_value=existing_value,
+                        )
+                        if was_capped:
+                            self.log("warning",
+                                f"{name}({code}) 집중도 CAP 적용: "
+                                f"{adjusted_budget:,.0f}원 → {capped_budget:,.0f}원 "
+                                f"(기존 평가액 {existing_value:,.0f}원, 총자산 {total_assets:,.0f}원)")
+                            adjusted_budget = capped_budget
+                        if adjusted_budget <= 0:
+                            # 한도 초과 → 이번 종목 스킵
+                            results.append({
+                                "code": code, "name": name,
+                                "status": "SKIP", "order_no": "",
+                                "message": "집중도 한도 초과 (concentration_limit)",
+                            })
+                            continue
+                    except Exception as _conc_exc:
+                        self.log("warning",
+                            f"{name}({code}) 집중도 체크 실패 → 스킵 없이 원래 예산 유지: {_conc_exc}")
+
                     # 중복 보유 방지
                     if self._position_manager.is_already_held(code):
                         self.log("info", f"{name}({code}) 이미 보유 중 → SKIP")

@@ -170,6 +170,16 @@ class WeightAdjuster(BaseAgent):
             if direction == "BUY":
                 direction = "HOLD"
                 self.log("warning", "CRITICAL 이슈로 인해 BUY → HOLD 강제 전환")
+
+        # 1-b. AVOID veto 승격 — 특정 AVOID 신호(gold_strong/dollar_strong/vix_spike)가
+        #      단독으로 활성화돼도 BUY → HOLD 강제
+        if direction == "BUY":
+            veto_hit = self._check_avoid_veto(active_signals)
+            if veto_hit:
+                direction = "HOLD"
+                self.log("warning",
+                         f"AVOID veto 발동 → BUY → HOLD 강제 전환 "
+                         f"(veto 신호: {', '.join(veto_hit)})")
         self.log("info", f"direction 결정: {direction}")
 
         # 2. weight_config 결정
@@ -178,6 +188,24 @@ class WeightAdjuster(BaseAgent):
         if phase == "대폭락장" and direction == "BUY":
             weight_config = {"aggressive_pct": 0.15, "defensive_pct": 0.0, "cash_pct": 0.85}
             self.log("info", "대폭락장 반등 포착 모드 — 최대 15% 투자")
+
+        # 2-b. VIX 선행경보 — 3일 연속 상승 + 절대값 임계 이상이면 aggressive 축소
+        vix_caution = payload.get("vix_caution", {}) or {}
+        if direction == "BUY" and vix_caution.get("active"):
+            scale = float(vix_caution.get("buy_scale_factor", 0.5))
+            orig_aggr = float(weight_config.get("aggressive_pct", 0.0))
+            reduced_aggr = round(orig_aggr * scale, 4)
+            added_cash = round(orig_aggr - reduced_aggr, 4)
+            weight_config = {
+                "aggressive_pct": reduced_aggr,
+                "defensive_pct":  float(weight_config.get("defensive_pct", 0.0)),
+                "cash_pct":       round(float(weight_config.get("cash_pct", 0.0)) + added_cash, 4),
+            }
+            self.log("warning",
+                     f"VIX 선행경보 발동(×{scale}) → aggressive "
+                     f"{orig_aggr:.0%} → {reduced_aggr:.0%} (+cash {added_cash:.0%}) "
+                     f"[사유: {vix_caution.get('reason', 'n/a')}]")
+
         self.log("info", f"weight_config: {weight_config}")
 
         # 3. targets 결정
@@ -406,6 +434,32 @@ class WeightAdjuster(BaseAgent):
             return "HOLD"
 
         return "BUY"
+
+    # ------------------------------------------------------------------
+    # AVOID veto 체크 (단독 veto 시그널)
+    # ------------------------------------------------------------------
+
+    def _check_avoid_veto(self, active_signals: list) -> list:
+        """
+        AVOID 신호 중 risk_config.json의 avoid_veto_signals.veto_ids에 포함된 항목이
+        하나라도 있으면 그 signal_id 리스트를 반환한다.
+        호출자는 반환값이 비어있지 않으면 BUY → HOLD로 강제한다.
+
+        risk_config.json에서 이 기능이 비활성화(enabled=false)이거나
+        설정을 읽지 못하면 빈 리스트를 반환(= veto 미적용).
+        """
+        cfg = self._risk_manager.get_config().get("avoid_veto_signals", {})
+        if not cfg.get("enabled", False):
+            return []
+        veto_ids = set(cfg.get("veto_ids", []))
+        if not veto_ids:
+            return []
+        hit = [
+            s.get("signal_id")
+            for s in active_signals
+            if s.get("direction") == "AVOID" and s.get("signal_id") in veto_ids
+        ]
+        return hit
 
     # ------------------------------------------------------------------
     # weight_config 결정

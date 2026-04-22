@@ -55,5 +55,24 @@
     ],
     "remaining_strategy": "trailing_stop",
     "description": "+1.5%에서 30% 매도, +3%에서 30% 매도, 나머지는 기존 트레일링/TP 따름"
+  },
+  "avoid_veto_signals": {
+    "enabled": true,
+    "veto_ids": ["gold_strong", "dollar_strong", "vix_spike"],
+    "description": "이 AVOID 신호 중 하나라도 활성화되면 BUY 신호 수와 무관하게 HOLD 강제(단독 veto). CLAUDE.md 선행지표 매핑의 '달러 강세/금 강세/VIX 30+ → AVOID' 룰을 실제 진입 차단으로 승격."
+  },
+  "concentration_limit": {
+    "enabled": true,
+    "max_single_stock_ratio": 0.25,
+    "action_when_exceeded": "CAP",
+    "description": "단일 종목 평가액이 총자산의 max_single_stock_ratio를 초과하면 신규/추가 매수 금액을 한도 내로 자동 축소(CAP). DCA로 인한 의도치 않은 쏠림 방지."
+  },
+  "vix_caution": {
+    "enabled": true,
+    "consecutive_up_days": 3,
+    "min_abs_level": 19.0,
+    "min_daily_change_pct": 2.0,
+    "buy_scale_factor": 0.5,
+    "description": "VIX가 min_abs_level 이상이고 최근 consecutive_up_days일 연속 min_daily_change_pct% 이상 상승 중이면, 국면이 아직 변하지 않았어도 aggressive 비중에 buy_scale_factor를 곱해 선제 축소."
   }
 }

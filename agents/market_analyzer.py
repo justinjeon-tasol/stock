@@ -292,6 +292,13 @@ class MarketAnalyzer(BaseAgent):
         except Exception as exc:
             self.log("warning", f"추세 필터 실패 (무시): {exc}")
 
+        # VIX 선행경보 (3일 연속 상승 + 절대값 임계)
+        vix_caution = self._check_vix_trend_caution(us)
+        if vix_caution.get("active"):
+            self.log("warning",
+                     f"VIX 선행경보 활성: {vix_caution.get('reason')} "
+                     f"→ WA에 buy_scale_factor={vix_caution.get('buy_scale_factor')} 전달")
+
         payload = {
             "market_phase":         dataclass_to_dict(market_phase),
             "active_signals":       active_signals,
@@ -303,6 +310,7 @@ class MarketAnalyzer(BaseAgent):
             "oversold_candidates":  oversold_candidates,                # 대폭락장 반등
             "trend_filter_results": trend_filter_results,               # Filter 2
             "kalman_signals":       kalman_signals,                     # 칼만 MA 신호
+            "vix_caution":          vix_caution,                        # VIX 선행경보
         }
 
         # ── 이슈 감지 (IssueManager 흡수) ──
@@ -385,6 +393,139 @@ class MarketAnalyzer(BaseAgent):
             return float(last.get("kospi_ret20", 0) or 0), float(last.get("kospi_vol10", 0) or 0)
         except Exception:
             return None, None
+
+    # ------------------------------------------------------------------
+    # VIX 선행경보 (risk_config.json → vix_caution)
+    # ------------------------------------------------------------------
+
+    def _load_vix_caution_config(self) -> dict:
+        """risk_config.json의 vix_caution 설정 로드. 실패 시 기본값."""
+        import json
+        default = {
+            "enabled": True,
+            "consecutive_up_days": 3,
+            "min_abs_level": 19.0,
+            "min_daily_change_pct": 2.0,
+            "buy_scale_factor": 0.5,
+        }
+        try:
+            cfg_path = Path(__file__).resolve().parent.parent / "config" / "risk_config.json"
+            if not cfg_path.exists():
+                return default
+            with open(cfg_path, encoding="utf-8") as f:
+                data = json.load(f)
+            vc = data.get("vix_caution", {}) or {}
+            merged = {**default, **vc}
+            return merged
+        except Exception:
+            return default
+
+    def _check_vix_trend_caution(self, us: dict) -> dict:
+        """
+        VIX 3일 연속 상승 + 절대값 임계 초과 → 선행경보 발동.
+
+        판정 로직:
+          1) 오늘 VIX ≥ min_abs_level
+          2) 최근 consecutive_up_days일 동안의 일간 변동률이 모두 min_daily_change_pct 이상
+             (예: 3일 연속 +2% 이상 상승)
+
+        반환 dict 구조:
+            {
+              "active": bool,
+              "reason": str,
+              "buy_scale_factor": float,
+              "values": [최근 N+1일 VIX 종가],
+              "changes": [최근 N일 일간 등락률 %],
+              "config": {...}
+            }
+        """
+        cfg = self._load_vix_caution_config()
+        result = {
+            "active": False,
+            "reason": "",
+            "buy_scale_factor": float(cfg.get("buy_scale_factor", 0.5)),
+            "values": [],
+            "changes": [],
+            "config": cfg,
+        }
+
+        if not cfg.get("enabled", True):
+            result["reason"] = "비활성화"
+            return result
+
+        n_days = int(cfg.get("consecutive_up_days", 3))
+        min_abs = float(cfg.get("min_abs_level", 19.0))
+        min_dchg = float(cfg.get("min_daily_change_pct", 2.0))
+
+        # 오늘 VIX (실시간)
+        today_vix = float(us.get("vix", {}).get("value", 0.0) or 0.0)
+        today_chg = float(us.get("vix", {}).get("change_pct", 0.0) or 0.0)
+
+        # ── 과거 VIX 종가 시리즈 로드 ──────────────────────────────────
+        try:
+            from data.history.history_loader import HistoryLoader
+            hl = HistoryLoader()
+            vix_close = hl._load_close("vix")
+        except Exception as exc:
+            result["reason"] = f"VIX 히스토리 로드 실패: {exc}"
+            return result
+
+        if vix_close is None or len(vix_close) < n_days + 1:
+            result["reason"] = "VIX 히스토리 부족"
+            return result
+
+        # 최근 N+1개 종가 (오늘을 포함할지 여부는 시점에 따라 다름)
+        recent = list(map(float, vix_close.tail(n_days + 1).values))
+        # 일간 변동률(%) — recent[i] 기준 이전일 대비
+        changes = []
+        for i in range(1, len(recent)):
+            prev = recent[i - 1]
+            curr = recent[i]
+            if prev <= 0:
+                changes.append(0.0)
+            else:
+                changes.append(round((curr - prev) / prev * 100.0, 3))
+
+        result["values"] = [round(v, 3) for v in recent]
+        result["changes"] = changes
+
+        # 오늘(실시간) VIX가 히스토리 마지막 값보다 더 최신이면 교체/추가
+        # (당일 장중에는 history CSV가 아직 반영 안 됐을 수 있음)
+        use_today = today_vix > 0 and abs(today_vix - recent[-1]) > 1e-6
+        if use_today:
+            # 오늘 등락률을 추가, 가장 오래된 변동률을 제거 (슬라이딩 윈도우)
+            changes_live = changes[1:] + [round(today_chg, 3)]
+            values_live = recent[1:] + [round(today_vix, 3)]
+            result["values"] = values_live
+            result["changes"] = changes_live
+            changes_check = changes_live
+            latest_level = today_vix
+        else:
+            changes_check = changes
+            latest_level = recent[-1]
+
+        # ── 판정 ──────────────────────────────────────────────────────
+        all_up = all(c >= min_dchg for c in changes_check[-n_days:])
+        level_ok = latest_level >= min_abs
+
+        if all_up and level_ok:
+            result["active"] = True
+            result["reason"] = (
+                f"VIX {latest_level:.2f} ≥ {min_abs:.1f} "
+                f"& {n_days}일 연속 ≥ +{min_dchg:.1f}% "
+                f"(등락률: {', '.join(f'{c:+.1f}%' for c in changes_check[-n_days:])})"
+            )
+        else:
+            reasons = []
+            if not level_ok:
+                reasons.append(f"레벨 {latest_level:.2f} < {min_abs:.1f}")
+            if not all_up:
+                reasons.append(
+                    f"연속상승조건 미충족 ({', '.join(f'{c:+.1f}%' for c in changes_check[-n_days:])})"
+                )
+            result["reason"] = "; ".join(reasons) if reasons else "조건 미충족"
+
+        return result
 
     def _classify_6phase(
         self,

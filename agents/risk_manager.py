@@ -326,6 +326,65 @@ class RiskManager:
         rc = self._config.get("recovery_mode", {})
         return float(rc.get("position_size_ratio", 0.3))
 
+    # ------------------------------------------------------------------
+    # 7. 단일종목 집중도 제한 (CAP)
+    # ------------------------------------------------------------------
+
+    def check_concentration_limit(
+        self,
+        code: str,
+        new_buy_amount: float,
+        total_asset: float,
+        existing_value: float = 0.0,
+    ) -> tuple[float, bool]:
+        """
+        단일 종목의 (기존 평가액 + 신규 매수액)이 총자산 대비 한도를 넘지 않도록
+        신규 매수 금액을 자동 축소(CAP)한다.
+
+        Parameters
+        ----------
+        code            : 매수 대상 종목코드 (로그용)
+        new_buy_amount  : 이번에 매수하려는 금액 (원)
+        total_asset     : 총자산 평가액 (원)
+        existing_value  : 이 종목의 현재 보유 평가액 (원, 없으면 0)
+
+        Returns
+        -------
+        (capped_amount, was_capped)
+            capped_amount : 집중도 한도 내로 축소된 매수 허용 금액 (원)
+                             - 한도 미초과 시 = new_buy_amount 그대로
+                             - 이미 한도 초과 시 = 0
+            was_capped    : 축소가 발생했으면 True
+        """
+        cfg = self._config.get("concentration_limit", {})
+        if not cfg.get("enabled", False):
+            return float(new_buy_amount), False
+        if total_asset <= 0 or new_buy_amount <= 0:
+            return float(new_buy_amount), False
+
+        max_ratio = float(cfg.get("max_single_stock_ratio", 0.25))
+        max_allowed = total_asset * max_ratio
+        headroom = max_allowed - float(existing_value)
+
+        if headroom <= 0:
+            logger.warning(
+                f"[리스크관리] 집중도 한도 초과 ({code}): "
+                f"기존 평가액 {existing_value:,.0f}원 ≥ 한도 {max_allowed:,.0f}원 "
+                f"({max_ratio:.0%}) → 매수 금액 0원으로 CAP"
+            )
+            return 0.0, True
+
+        if new_buy_amount <= headroom:
+            return float(new_buy_amount), False
+
+        logger.warning(
+            f"[리스크관리] 집중도 한도 CAP ({code}): "
+            f"요청 {new_buy_amount:,.0f}원 → 허용 {headroom:,.0f}원 "
+            f"(기존 {existing_value:,.0f} + 한도 {max_allowed:,.0f}, "
+            f"ratio={max_ratio:.0%})"
+        )
+        return float(headroom), True
+
     def get_config(self) -> dict:
         """현재 로드된 전체 리스크 설정을 반환한다."""
         return dict(self._config)
