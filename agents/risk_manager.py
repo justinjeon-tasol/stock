@@ -299,6 +299,58 @@ class RiskManager:
             return dampen
         return 1.0
 
+    def check_sector_concentration_limit(
+        self,
+        target_sector: str,
+        held_sectors: list,
+        phase: str,
+    ) -> tuple:
+        """
+        섹터 집중도 상한 체크 (BT-02 실증).
+
+        동일 섹터 보유 개수가 국면별 한도를 초과할 경우 신규 매수를 차단한다.
+        `sector_correlation.same_sector_dampen`(soft decay)과 달리 여기서는
+        hard block 이다.
+
+        Parameters
+        ----------
+        target_sector : 매수 대상 종목의 섹터
+        held_sectors  : 현재 보유 포지션들의 섹터 리스트 (중복 포함)
+        phase         : 현재 시장 국면 (대상승장/상승장/일반장/…)
+
+        Returns
+        -------
+        (allowed, reason)
+            allowed=True,  reason=""  : 진입 허용
+            allowed=False, reason=... : 차단 사유 (로그용 메시지)
+        """
+        cfg = self._config.get("sector_concentration_limit", {})
+        if not cfg.get("enabled", False):
+            return True, ""
+
+        # 국면별 override 우선 (없으면 max_single_sector_ratio 기본값)
+        override = cfg.get("by_phase_override", {})
+        cap = float(override.get(phase, cfg.get("max_single_sector_ratio", 0.50)))
+
+        max_pos = self.get_max_positions(phase)
+        if max_pos <= 0:
+            return True, ""
+
+        same_sector_count = sum(1 for s in held_sectors if s == target_sector)
+        projected = (same_sector_count + 1) / max_pos
+
+        if projected > cap:
+            reason = (
+                f"[섹터집중도] {target_sector} 진입 차단: "
+                f"현재 {same_sector_count}/{max_pos} → 추가 시 {projected:.0%} "
+                f"> cap {cap:.0%} (phase={phase})"
+            )
+            logger.warning(reason)
+            return False, reason
+
+        return True, ""
+
+
     # ------------------------------------------------------------------
     # 유틸리티
     # ------------------------------------------------------------------
