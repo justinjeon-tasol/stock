@@ -710,6 +710,9 @@ class WeightAdjuster(BaseAgent):
         # Step 6b: 포트폴리오 상관관계 감쇠 — 동일 섹터 보유 종목 있으면 weight 축소
         candidates = self._apply_portfolio_correlation(candidates)
 
+        # Step 6c: 섹터 집중도 상한 (BT-02 실증) — hard block
+        candidates = self._apply_sector_concentration_limit(candidates, phase)
+
         # Step 7: 추세 필터 (Filter 2) — trend_score 미달 종목 제외 + 비중 조정
         candidates = self._apply_trend_filter(candidates, trend_filter_results)
 
@@ -960,6 +963,44 @@ class WeightAdjuster(BaseAgent):
                 )
             else:
                 result.append(c)
+
+        return result
+
+    def _apply_sector_concentration_limit(self, candidates: list, phase: str) -> list:
+        """
+        섹터 집중도 상한(BT-02 실증) 기반 매수 후보 차단.
+
+        `_apply_portfolio_correlation`의 soft decay(weight × 0.5)와 달리
+        이 단계는 hard block 이다. 동일 섹터 보유 개수가 국면별 한도를
+        초과하면 해당 후보를 완전히 제외한다.
+
+        risk_config.json의 sector_concentration_limit 섹션을 참조:
+          - enabled (bool): 비활성화 시 후보 통과
+          - max_single_sector_ratio (float): 기본 cap (0.50)
+          - by_phase_override (dict): 국면별 cap 재정의
+        """
+        # 보유 포지션의 섹터 리스트 (primary sector 기준)
+        open_positions = self._position_manager.get_open_positions()
+        held_sectors: list = []
+        for pos in open_positions:
+            code = pos.get("code", "")
+            sectors = self._classification.get_all_sectors_for_stock(code)
+            primary = sectors[0] if sectors else "기타"
+            held_sectors.append(primary)
+
+        result = []
+        for c in candidates:
+            code = c["code"]
+            sectors = self._classification.get_all_sectors_for_stock(code)
+            primary = sectors[0] if sectors else "기타"
+
+            allowed, reason = self._risk_manager.check_sector_concentration_limit(
+                primary, held_sectors, phase,
+            )
+            if allowed:
+                result.append(c)
+            else:
+                self.log("info", f"[집중도차단] {c['name']}({code}) {reason}")
 
         return result
 
