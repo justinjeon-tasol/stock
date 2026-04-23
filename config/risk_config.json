@@ -13,7 +13,7 @@
     "description": "연속 N회 손절 시 aggressive 비중을 reduce_aggressive_by 만큼 곱하여 축소"
   },
   "max_positions_by_phase": {
-    "대상승장": 5,
+    "대상승장": 7,
     "상승장": 4,
     "일반장": 3,
     "변동폭큰": 2,
@@ -66,6 +66,16 @@
     "max_single_stock_ratio": 0.25,
     "action_when_exceeded": "CAP",
     "description": "단일 종목 평가액이 총자산의 max_single_stock_ratio를 초과하면 신규/추가 매수 금액을 한도 내로 자동 축소(CAP). DCA로 인한 의도치 않은 쏠림 방지."
+  },
+  "sector_concentration_limit": {
+    "enabled": true,
+    "max_single_sector_ratio": 0.50,
+    "by_phase_override": {
+      "일반장": 0.30,
+      "변동폭큰": 0.40
+    },
+    "action_when_exceeded": "BLOCK_NEW_ENTRY",
+    "description": "단일 섹터 포지션 개수 비중 상한 (BT-02 실증값, 2020-2025). cap=0.50에서 누적 순초과수익 최고. 초과 시 신규 매수 차단. 4/23 2차전지 76% 집중 동반손절 방지."
   },
   "vix_caution": {
     "enabled": true,
