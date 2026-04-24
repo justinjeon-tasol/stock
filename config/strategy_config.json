@@ -212,7 +212,7 @@
       "kr_themes": []
     },
     "nasdaq_crash": {
-      "threshold_pct": -1.5,
+      "threshold_pct": -3.0,
       "kr_sectors": [
         "지수ETF"
       ],
@@ -220,7 +220,7 @@
       "kr_themes": []
     },
     "sox_crash": {
-      "threshold_pct": -2.5,
+      "threshold_pct": -4.0,
       "kr_sectors": [
         "반도체"
       ],
@@ -231,7 +231,7 @@
       ]
     },
     "tesla_crash": {
-      "threshold_pct": -2.5,
+      "threshold_pct": -4.0,
       "kr_sectors": [
         "2차전지"
       ],
