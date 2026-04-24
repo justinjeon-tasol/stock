@@ -40,7 +40,7 @@ class Executor(BaseAgent):
     """
 
     def __init__(self) -> None:
-        super().__init__("EX", "실행", timeout=30, max_retries=3)
+        super().__init__("EX", "실행", timeout=120, max_retries=3)
 
         # KIS API 설정
         self._app_key: Optional[str] = None
