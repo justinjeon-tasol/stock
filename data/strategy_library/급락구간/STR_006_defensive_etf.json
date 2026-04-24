@@ -10,7 +10,7 @@
   },
   "performance": {
     "backtest_win_rate": 0.5714,
-    "backtest_return_pct": 1.2849,
+    "backtest_return_pct": 0.9277,
     "real_win_rate": 0.0,
     "real_return_pct": 0.0,
     "mdd": -4.94,
@@ -25,6 +25,6 @@
     "STR_004"
   ],
   "created_at": "2026-03-31",
-  "updated_at": "2026-04-02",
+  "updated_at": "2026-04-24",
   "holding_period": "초단기"
 }

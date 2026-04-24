@@ -170,13 +170,13 @@ def _signals_str007(data: dict) -> pd.Series:
 
 
 _SIGNAL_FUNCS = {
-    "STR_001": (_signals_str001, "kospi",    3.0, -2.0),   # (신호함수, 대상, TP%, SL%)
-    "STR_002": (_signals_str002, "sk_hynix", 4.0, -2.5),
+    "STR_001": (_signals_str001, "kospi",    2.0, -1.2),   # (신호함수, 대상, TP%, SL%)
+    "STR_002": (_signals_str002, "sk_hynix", 2.5, -1.5),
     "STR_003": (_signals_str003, "sk_hynix", 5.0, -3.0),
     "STR_004": (_signals_str004, "sk_hynix", 6.0, -3.0),
     "STR_005": (_signals_str005, "kospi",    3.0, -2.0),
     "STR_006": (_signals_str006, "kospi",    4.0, -2.5),
-    "STR_007": (_signals_str007, "kospi",    3.0, -2.0),
+    "STR_007": (_signals_str007, "kospi",    5.0, -1.5),
 }
 
 

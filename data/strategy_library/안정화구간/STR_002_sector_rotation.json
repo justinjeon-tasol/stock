@@ -5,23 +5,23 @@
   "description": "SOX 1% 이상 상승 + 달러 약세 시 반도체 섹터 로테이션 매매",
   "conditions": {
     "진입": "SOX +1.0% 이상 & USD/KRW 변동 -0.3% 이하(달러 약세) & VIX 20 이하",
-    "청산": "+4% 도달 또는 -2.5% 손절",
+    "청산": "+2.5% 도달 또는 -1.5% 손절",
     "제외": "VIX 22 초과 시 진입 금지"
   },
   "performance": {
-    "backtest_win_rate": 0.5333,
-    "backtest_return_pct": 0.8351,
+    "backtest_win_rate": 0.5102,
+    "backtest_return_pct": 0.5408,
     "real_win_rate": 0.0,
     "real_return_pct": 0.0,
-    "mdd": -14.85,
-    "status": "백테스팅중",
-    "backtest_trade_count": 45
+    "mdd": -9.17,
+    "status": "검증완료",
+    "backtest_trade_count": 49
   },
   "compatible": [
     "STR_001"
   ],
   "incompatible": [],
   "created_at": "2026-03-31",
-  "updated_at": "2026-04-02",
+  "updated_at": "2026-04-24",
   "holding_period": "단기"
 }

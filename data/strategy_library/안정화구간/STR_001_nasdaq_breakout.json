@@ -5,23 +5,23 @@
   "description": "나스닥 1.5% 이상 급등 다음날 코스닥 지수 추종 매매",
   "conditions": {
     "진입": "전일 나스닥100 +1.5% 이상 & VIX 20 이하 & 한국 선물 +0.3% 이상",
-    "청산": "당일 +3% 도달 또는 -2% 손절",
+    "청산": "당일 +2% 도달 또는 -1.2% 손절",
     "제외": "금 강세(+1.5% 이상) 동시 발생 시 제외"
   },
   "performance": {
-    "backtest_win_rate": 0.4878,
-    "backtest_return_pct": 0.1523,
+    "backtest_win_rate": 0.5116,
+    "backtest_return_pct": 0.3138,
     "real_win_rate": 0.0,
     "real_return_pct": 0.0,
-    "mdd": -13.92,
-    "status": "백테스팅중",
-    "backtest_trade_count": 41
+    "mdd": -9.26,
+    "status": "검증완료",
+    "backtest_trade_count": 43
   },
   "compatible": [
     "STR_002"
   ],
   "incompatible": [],
   "created_at": "2026-03-31",
-  "updated_at": "2026-04-02",
+  "updated_at": "2026-04-24",
   "holding_period": "단기"
 }
