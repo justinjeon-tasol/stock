@@ -27,6 +27,10 @@ KR_DIR   = HIST_DIR / "kr_market"
 COM_DIR  = HIST_DIR / "commodity"
 COR_DIR  = HIST_DIR / "correlation"
 
+# 디렉터리 자동 생성 (없으면 fetch 중 에러나던 것 방지)
+for _d in (US_DIR, KR_DIR, COM_DIR, COR_DIR):
+    _d.mkdir(parents=True, exist_ok=True)
+
 # ──────────────────────────────────────────────
 # 1. 미국 시장 히스토리 (yfinance)
 # ──────────────────────────────────────────────
@@ -162,7 +166,8 @@ KR_INDICES_YF = {
     "KS200":  "^KS200",   # KOSPI200
 }
 
-KR_STOCKS = {
+# 기존 전략(STR_001~007)이 참조하는 10개 — backtest_engine.py SYMBOL_MAP과 호환 유지
+_KR_STOCKS_NAMED = {
     "samsung":  "005930",   # 삼성전자
     "sk_hynix": "000660",   # SK하이닉스
     "lg_energy":"373220",   # LG에너지솔루션
@@ -174,6 +179,38 @@ KR_STOCKS = {
     "naver":    "035420",   # 네이버
     "hyundai":  "005380",   # 현대차
 }
+
+
+def _load_kospi200_universe() -> dict[str, str]:
+    """
+    tradingview-1 seed JSON에서 KOSPI200 구성종목 로드.
+    반환: {파일명_slug: 종목코드} — 코드 기반(stock_005930.csv 형식).
+    기존 _KR_STOCKS_NAMED에 있는 코드는 중복 제외 (named 파일이 우선).
+    """
+    import json
+    seed_path = Path(__file__).resolve().parent.parent.parent / "data" / "seed" / "kospi200.json"
+    if not seed_path.exists():
+        return {}
+    try:
+        with open(seed_path, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"  [KR] kospi200.json 로드 실패: {e}")
+        return {}
+
+    existing_codes = set(_KR_STOCKS_NAMED.values())
+    result: dict[str, str] = {}
+    for s in data.get("stocks", []):
+        code = s.get("code")
+        if not code or code in existing_codes:
+            continue
+        # 파일명 slug는 코드 그대로 (stock_005930.csv)
+        result[code] = code
+    return result
+
+
+# 최종 KR_STOCKS = named 10개 + kospi200 증분 (총 ~200)
+KR_STOCKS = {**_KR_STOCKS_NAMED, **_load_kospi200_universe()}
 
 
 def fetch_kr_history(start: str, end: str, update_only: bool = False) -> dict[str, pd.DataFrame]:
