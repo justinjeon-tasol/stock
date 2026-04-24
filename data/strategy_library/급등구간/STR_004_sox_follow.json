@@ -9,13 +9,13 @@
     "제외": "VIX 25 초과 시 진입 금지"
   },
   "performance": {
-    "backtest_win_rate": 0.4412,
-    "backtest_return_pct": 0.8835,
+    "backtest_win_rate": 0.466,
+    "backtest_return_pct": 1.1079,
     "real_win_rate": 0.0,
     "real_return_pct": 0.0,
     "mdd": -25.66,
     "status": "백테스팅중",
-    "backtest_trade_count": 102
+    "backtest_trade_count": 103
   },
   "compatible": [
     "STR_003"
@@ -26,6 +26,6 @@
     "STR_007"
   ],
   "created_at": "2026-03-31",
-  "updated_at": "2026-04-02",
+  "updated_at": "2026-04-24",
   "holding_period": "단기"
 }
