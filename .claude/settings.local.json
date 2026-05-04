@@ -44,6 +44,11 @@
       "Bash(rm -rf \"C:/Users/justi/AppData/Local/Temp/next-*\")",
       "Bash(rm -rf \"C:/Users/justi/AppData/Local/Temp/v8-compile-cache*\")",
       "Bash(npm cache:*)",
+      "Bash(ssh stockvm:*)",
+      "Bash(gcloud compute ssh:*)",
+      "Bash(gcloud compute instances list:*)",
+      "Bash(gcloud compute config-ssh:*)",
+      "Bash(gcloud config get:*)",
       "mcp__filesystem__directory_tree"
     ]
   }
