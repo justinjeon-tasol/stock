@@ -29,7 +29,26 @@ KIS API를 통한 모의투자 자동매매를 수행하는 멀티에이전트 �
 
 ### Git 브랜치 전략
 - `dev`: 모든 개발 작업 → `main`: 검증 후 merge (배포)
+- `production-live`: 검증된 시점의 **백업 스냅샷**. 분기 후 손대지 않음. main 고장 시 복원용 (2026-05-04 신설)
 - 상세: `GIT_WORKFLOW.md` 참조
+
+### VM 운영 정책 (2026-05-04 확정)
+
+| 환경 | 권한 | 동작 |
+|------|------|------|
+| 로컬 본체 (Mac, `~/projects/stock`) | **commit + push 전담** | 모든 코드 수정·커밋·push origin main |
+| GCP VM (`stockvm`, `~/stock`) | **read-only (pull only)** | `git pull origin main`만. 직접 commit·push 금지 |
+
+**원칙**:
+- VM에서는 절대 `git commit`·`git push` 실행 금지
+- 모든 변경: 로컬에서 commit + push → GitHub → VM에서 pull
+- VM의 우발적 미커밋 파일(자동 산출물 등)은 stash 또는 .gitignore로 처리, 절대 commit 안 함
+- VM의 원격 origin이 HTTPS여도 push 사용 안 하므로 변경 불필요 (fetch/pull만 필요)
+
+**이유**:
+- VM에 GitHub 인증(SSH deploy key/PAT) 미설정 (push 막혀 있음)
+- 단일 commit 진실 출처(SoT) 확보 → 충돌·동기화 사고 방지
+- VM은 운영 환경 — 코드 수정 책임을 로컬 개발 환경에 일원화
 
 ---
 
