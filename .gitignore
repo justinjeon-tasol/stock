@@ -60,3 +60,6 @@ npm-cache/
 
 # 임시 메모
 frontend_fix*.md
+
+# 빌드 로그 (자동 생성)
+frontend/build.log
