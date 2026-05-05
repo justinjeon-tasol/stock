@@ -1,5 +1,6 @@
-# 환경 변수 파일 (절대 커밋 금지)
-.env
+# 환경 변수 파일 (절대 커밋 금지) — .env, .env.bak, ".env one" 등 모든 변종 차단
+.env*
+!.env.example
 
 # Python 캐시
 __pycache__/
