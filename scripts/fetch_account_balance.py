@@ -24,6 +24,11 @@ APP_KEY = os.getenv("KIS_APP_KEY", "")
 APP_SECRET = os.getenv("KIS_APP_SECRET", "")
 ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO", "")
 
+# 계좌번호 분리: 하이픈/공백 제거 (실거래 "12345678-01" 형식 지원)
+_RAW_ACCT = ACCOUNT_NO.replace("-", "").replace(" ", "")
+_CANO = _RAW_ACCT[:8]
+_ACNT_PRDT_CD = _RAW_ACCT[8:] or "01"
+
 # KIS 모드 분기 (모의/실거래)
 _IS_MOCK = os.getenv("KIS_IS_MOCK", "true").lower() not in ("false", "0", "no")
 _BASE = _KIS_BASE_URL if _IS_MOCK else _KIS_REAL_URL
@@ -54,8 +59,8 @@ def get_token() -> str:
 
 def fetch_balance(token: str) -> dict:
     """KIS 잔고 조회 API 호출."""
-    cano = ACCOUNT_NO[:8]
-    acnt_prdt_cd = ACCOUNT_NO[8:]
+    cano = _CANO
+    acnt_prdt_cd = _ACNT_PRDT_CD
 
     headers = {
         "authorization": f"Bearer {token}",

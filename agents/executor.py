@@ -88,6 +88,12 @@ class Executor(BaseAgent):
         is_mock_str        = os.getenv("KIS_IS_MOCK", "true")
         self._is_mock      = is_mock_str.lower() not in ("false", "0", "no")
 
+        # 계좌번호 분리: 하이픈/공백 제거 후 CANO(8자리) + ACNT_PRDT_CD
+        # 실거래 형식 "12345678-01" / 모의 형식 "1234567801" 모두 지원
+        _raw_acct = (self._account_no or "").replace("-", "").replace(" ", "")
+        self._cano = _raw_acct[:8]
+        self._acnt_prdt_cd = _raw_acct[8:] or "01"
+
         # DRY_RUN: 실거래 안전장치. true면 KIS 주문 API 호출 skip (log + 가짜 OK 반환).
         # default=false → env 미설정 시 평소 실 주문. 사고 시 즉시 토글로 운영 정지.
         dry_run_str        = os.getenv("DRY_RUN", "false")
@@ -321,8 +327,8 @@ class Executor(BaseAgent):
         tr_id = self._tr_order(action)
 
         # 계좌번호 분리: 앞 8자리 / 뒤 2자리
-        cano           = self._account_no[:8]
-        acnt_prdt_cd   = self._account_no[8:]
+        cano           = self._cano
+        acnt_prdt_cd   = self._acnt_prdt_cd
 
         url = f"{self._kis_base()}/uapi/domestic-stock/v1/trading/order-cash"
         headers = {
@@ -412,8 +418,8 @@ class Executor(BaseAgent):
         if not self._account_no or not order_no:
             return None
 
-        cano = self._account_no[:8]
-        acnt_prdt_cd = self._account_no[8:]
+        cano = self._cano
+        acnt_prdt_cd = self._acnt_prdt_cd
         tr_id = self._tr_ccld()
 
         from datetime import date as _date
@@ -2188,8 +2194,8 @@ class Executor(BaseAgent):
         if not self._account_no:
             return None
 
-        cano         = self._account_no[:8]
-        acnt_prdt_cd = self._account_no[8:]
+        cano         = self._cano
+        acnt_prdt_cd = self._acnt_prdt_cd
 
         url = f"{self._kis_base()}/uapi/domestic-stock/v1/trading/inquire-balance"
         headers = {
@@ -2325,8 +2331,8 @@ class Executor(BaseAgent):
         if not self._account_no:
             return []
 
-        cano = self._account_no[:8]
-        acnt_prdt_cd = self._account_no[8:]
+        cano = self._cano
+        acnt_prdt_cd = self._acnt_prdt_cd
 
         url = f"{self._kis_base()}/uapi/domestic-stock/v1/trading/inquire-balance"
         headers = {

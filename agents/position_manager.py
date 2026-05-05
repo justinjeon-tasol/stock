@@ -50,9 +50,11 @@ class PositionManager:
         self._app_key    = os.getenv("KIS_APP_KEY")
         self._app_secret = os.getenv("KIS_APP_SECRET")
         account_no       = os.getenv("KIS_ACCOUNT_NO", "")
-        self._cano         = account_no[:8]
+        # 계좌번호 분리: 하이픈/공백 제거 후 CANO(8) + ACNT_PRDT_CD (실거래 "12345678-01" 형식 지원)
+        _raw_acct          = account_no.replace("-", "").replace(" ", "")
+        self._cano         = _raw_acct[:8]
+        self._acnt_prdt_cd = _raw_acct[8:] or "01"
         self._horizon    = HorizonManager()
-        self._acnt_prdt_cd = account_no[8:] if len(account_no) > 8 else "01"
         # KIS 모드 (모의/실거래)
         is_mock_str        = os.getenv("KIS_IS_MOCK", "true")
         self._is_mock      = is_mock_str.lower() not in ("false", "0", "no")
