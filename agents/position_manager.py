@@ -53,6 +53,17 @@ class PositionManager:
         self._cano         = account_no[:8]
         self._horizon    = HorizonManager()
         self._acnt_prdt_cd = account_no[8:] if len(account_no) > 8 else "01"
+        # KIS 모드 (모의/실거래)
+        is_mock_str        = os.getenv("KIS_IS_MOCK", "true")
+        self._is_mock      = is_mock_str.lower() not in ("false", "0", "no")
+
+    def _kis_base(self) -> str:
+        """KIS API 베이스 URL — 모의/실거래 분기."""
+        return _KIS_BASE_URL if self._is_mock else _KIS_REAL_URL
+
+    def _tr_balance(self) -> str:
+        """주식잔고 조회 TR_ID."""
+        return "VTTC8434R" if self._is_mock else "TTTC8434R"
 
     # ------------------------------------------------------------------
     # 동기 메서드
@@ -538,12 +549,12 @@ class PositionManager:
         if not all([self._app_key, self._app_secret, self._cano]):
             return {}
 
-        url = f"{_KIS_BASE_URL}/uapi/domestic-stock/v1/trading/inquire-balance"
+        url = f"{self._kis_base()}/uapi/domestic-stock/v1/trading/inquire-balance"
         headers = {
             "authorization": f"Bearer {token}",
             "appkey":        self._app_key,
             "appsecret":     self._app_secret,
-            "tr_id":         "VTTC8434R",
+            "tr_id":         self._tr_balance(),
             "custtype":      "P",
         }
         params = {

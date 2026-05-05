@@ -22,12 +22,9 @@ from agents.risk_manager import RiskManager
 from database.db import save_trade, save_pending_dca, get_pending_dca_list, update_pending_dca_status, lock_pending_dca
 from protocol.protocol import StandardMessage, dataclass_to_dict
 
-# 모의투자 KIS API 베이스 URL
-_KIS_BASE_URL = "https://openapivts.koreainvestment.com:29443"
-
-# 주문 TR ID
-_TR_BUY  = "VTTC0802U"
-_TR_SELL = "VTTC0801U"
+# KIS API 베이스 URL — 모드별 분기 (self._is_mock으로 선택)
+_KIS_URL_MOCK = "https://openapivts.koreainvestment.com:29443"
+_KIS_URL_REAL = "https://openapi.koreainvestment.com:9443"
 
 # 텔레그램 API 베이스 URL
 _TELEGRAM_BASE_URL = "https://api.telegram.org"
@@ -140,6 +137,28 @@ class Executor(BaseAgent):
             self.log("warning", f"분할매도 설정 로드 실패: {exc}")
 
     # ------------------------------------------------------------------
+    # KIS 모드별 분기 helper (URL / TR_ID)
+    # ------------------------------------------------------------------
+
+    def _kis_base(self) -> str:
+        """KIS API 베이스 URL — 모의/실거래 분기."""
+        return _KIS_URL_MOCK if self._is_mock else _KIS_URL_REAL
+
+    def _tr_order(self, action: str) -> str:
+        """주문 TR_ID — mock: V접두 / real: T접두. action: 'BUY'|'SELL'."""
+        if self._is_mock:
+            return "VTTC0802U" if action == "BUY" else "VTTC0801U"
+        return "TTTC0802U" if action == "BUY" else "TTTC0801U"
+
+    def _tr_balance(self) -> str:
+        """주식잔고 조회 TR_ID."""
+        return "VTTC8434R" if self._is_mock else "TTTC8434R"
+
+    def _tr_ccld(self) -> str:
+        """주식체결 조회 TR_ID."""
+        return "VTTC8001R" if self._is_mock else "TTTC8001R"
+
+    # ------------------------------------------------------------------
     # KIS 토큰 발급
     # ------------------------------------------------------------------
 
@@ -181,7 +200,7 @@ class Executor(BaseAgent):
 
         self.log("info", "KIS 토큰 발급 요청")
 
-        url = f"{_KIS_BASE_URL}/oauth2/tokenP"
+        url = f"{self._kis_base()}/oauth2/tokenP"
         body = {
             "grant_type": "client_credentials",
             "appkey":     self._app_key,
@@ -250,13 +269,13 @@ class Executor(BaseAgent):
             return {"status": "ERROR", "order_no": "", "message": "KIS_ACCOUNT_NO 미설정"}
 
         qty = max(1, int(quantity))
-        tr_id = _TR_BUY if action == "BUY" else _TR_SELL
+        tr_id = self._tr_order(action)
 
         # 계좌번호 분리: 앞 8자리 / 뒤 2자리
         cano           = self._account_no[:8]
         acnt_prdt_cd   = self._account_no[8:]
 
-        url = f"{_KIS_BASE_URL}/uapi/domestic-stock/v1/trading/order-cash"
+        url = f"{self._kis_base()}/uapi/domestic-stock/v1/trading/order-cash"
         headers = {
             "Content-Type": "application/json",
             "authorization": f"Bearer {token}",
@@ -346,12 +365,12 @@ class Executor(BaseAgent):
 
         cano = self._account_no[:8]
         acnt_prdt_cd = self._account_no[8:]
-        tr_id = "VTTC8001R" if self._is_mock else "TTTC8001R"
+        tr_id = self._tr_ccld()
 
         from datetime import date as _date
         today_str = _date.today().strftime("%Y%m%d")
 
-        url = f"{_KIS_BASE_URL}/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
+        url = f"{self._kis_base()}/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "authorization": f"Bearer {token}",
@@ -2099,12 +2118,12 @@ class Executor(BaseAgent):
         cano         = self._account_no[:8]
         acnt_prdt_cd = self._account_no[8:]
 
-        url = f"{_KIS_BASE_URL}/uapi/domestic-stock/v1/trading/inquire-balance"
+        url = f"{self._kis_base()}/uapi/domestic-stock/v1/trading/inquire-balance"
         headers = {
             "authorization": f"Bearer {token}",
             "appkey":        self._app_key,
             "appsecret":     self._app_secret,
-            "tr_id":         "VTTC8434R",
+            "tr_id":         self._tr_balance(),
             "custtype":      "P",
         }
         params = {
@@ -2236,12 +2255,12 @@ class Executor(BaseAgent):
         cano = self._account_no[:8]
         acnt_prdt_cd = self._account_no[8:]
 
-        url = f"{_KIS_BASE_URL}/uapi/domestic-stock/v1/trading/inquire-balance"
+        url = f"{self._kis_base()}/uapi/domestic-stock/v1/trading/inquire-balance"
         headers = {
             "authorization": f"Bearer {token}",
             "appkey": self._app_key,
             "appsecret": self._app_secret,
-            "tr_id": "VTTC8434R",
+            "tr_id": self._tr_balance(),
             "custtype": "P",
         }
         params = {

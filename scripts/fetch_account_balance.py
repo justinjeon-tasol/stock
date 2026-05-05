@@ -24,6 +24,11 @@ APP_KEY = os.getenv("KIS_APP_KEY", "")
 APP_SECRET = os.getenv("KIS_APP_SECRET", "")
 ACCOUNT_NO = os.getenv("KIS_ACCOUNT_NO", "")
 
+# KIS 모드 분기 (모의/실거래)
+_IS_MOCK = os.getenv("KIS_IS_MOCK", "true").lower() not in ("false", "0", "no")
+_BASE = _KIS_BASE_URL if _IS_MOCK else _KIS_REAL_URL
+_TR_BALANCE = "VTTC8434R" if _IS_MOCK else "TTTC8434R"
+
 
 def get_token() -> str:
     """KIS 토큰 발급 (캐시 파일 우선)."""
@@ -39,7 +44,7 @@ def get_token() -> str:
             pass
 
     resp = requests.post(
-        f"{_KIS_BASE_URL}/oauth2/tokenP",
+        f"{_BASE}/oauth2/tokenP",
         json={"grant_type": "client_credentials", "appkey": APP_KEY, "appsecret": APP_SECRET},
         timeout=10,
     )
@@ -56,7 +61,7 @@ def fetch_balance(token: str) -> dict:
         "authorization": f"Bearer {token}",
         "appkey": APP_KEY,
         "appsecret": APP_SECRET,
-        "tr_id": "VTTC8434R",
+        "tr_id": _TR_BALANCE,
         "custtype": "P",
     }
     params = {
@@ -74,7 +79,7 @@ def fetch_balance(token: str) -> dict:
     }
 
     resp = requests.get(
-        f"{_KIS_BASE_URL}/uapi/domestic-stock/v1/trading/inquire-balance",
+        f"{_BASE}/uapi/domestic-stock/v1/trading/inquire-balance",
         headers=headers, params=params, timeout=10,
     )
     data = resp.json()
