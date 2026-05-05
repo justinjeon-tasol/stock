@@ -21,6 +21,7 @@ from agents.position_manager import PositionManager
 from agents.risk_manager import RiskManager
 from database.db import save_trade, save_pending_dca, get_pending_dca_list, update_pending_dca_status, lock_pending_dca
 from protocol.protocol import StandardMessage, dataclass_to_dict
+from services.order_limits import check_order_limit
 
 # KIS API 베이스 URL — 모드별 분기 (self._is_mock으로 선택)
 _KIS_URL_MOCK = "https://openapivts.koreainvestment.com:29443"
@@ -251,9 +252,10 @@ class Executor(BaseAgent):
         name: str,
         action: str,
         quantity: int = 1,
+        expected_price: float = 0.0,
     ) -> dict:
         """
-        KIS 모의투자 API를 통해 시장가 주문을 실행한다.
+        KIS API를 통해 시장가 주문을 실행한다.
 
         Args:
             token:    KIS 접근 토큰
@@ -261,6 +263,7 @@ class Executor(BaseAgent):
             name:     종목명 (예: "SK하이닉스")  — 로깅용
             action:   "BUY" | "SELL"
             quantity: 주문 수량 (기본 1주)
+            expected_price: 예상 체결가 (BUY 한도 검증용, 시장가라 직전 시세 권장)
 
         Returns:
             {"status": "OK|ERROR", "order_no": str, "message": str}
@@ -269,6 +272,17 @@ class Executor(BaseAgent):
             return {"status": "ERROR", "order_no": "", "message": "KIS_ACCOUNT_NO 미설정"}
 
         qty = max(1, int(quantity))
+
+        # ── 주문 한도 검증 (BUY만, SELL은 손절 차단 위험으로 면제) ──
+        ok, reason = check_order_limit(action, code, qty, expected_price)
+        if not ok:
+            self.log("warning", f"[주문한도] {name}({code}) {action} 거부: {reason}")
+            try:
+                await self._send_telegram(f"⛔ 주문 거부 (한도)\n{name}({code}) {action} {qty}주\n{reason}")
+            except Exception:
+                pass
+            return {"status": "ERROR", "order_no": "", "message": f"주문 한도 초과: {reason}"}
+
         tr_id = self._tr_order(action)
 
         # 계좌번호 분리: 앞 8자리 / 뒤 2자리
@@ -831,7 +845,9 @@ class Executor(BaseAgent):
                     f"현재가={current_price:,.0f} ≤ 목표가={target_price:,.0f}",
                 )
                 try:
-                    order_result = await self._place_order(token, code, name, "BUY", quantity)
+                    order_result = await self._place_order(
+                        token, code, name, "BUY", quantity, expected_price=current_price
+                    )
                 except Exception as exc:
                     self.log("error", f"[DCA] {name}({code}) 2차 매수 주문 실패: {exc}")
                     # 실패 시 다시 PENDING으로 복구 (다음 사이클에서 재시도)
@@ -1862,7 +1878,10 @@ class Executor(BaseAgent):
                         dca_remaining_qty = 0
 
                     try:
-                        order_result = await self._place_order(token, code, name, "BUY", buy_quantity)
+                        order_result = await self._place_order(
+                            token, code, name, "BUY", buy_quantity,
+                            expected_price=current_price_for_qty,
+                        )
                     except Exception as exc:
                         self.log("error", f"{name}({code}) 주문 예외: {exc}")
                         order_result = {"status": "ERROR", "order_no": "", "message": str(exc)}
