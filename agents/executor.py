@@ -8,6 +8,7 @@ WeightAdjuster의 SIGNAL 메시지를 받아 KIS API로 모의투자 주문을 �
 import asyncio
 import json
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -87,6 +88,11 @@ class Executor(BaseAgent):
         is_mock_str        = os.getenv("KIS_IS_MOCK", "true")
         self._is_mock      = is_mock_str.lower() not in ("false", "0", "no")
 
+        # DRY_RUN: 실거래 안전장치. true면 KIS 주문 API 호출 skip (log + 가짜 OK 반환).
+        # default=false → env 미설정 시 평소 실 주문. 사고 시 즉시 토글로 운영 정지.
+        dry_run_str        = os.getenv("DRY_RUN", "false")
+        self._dry_run      = dry_run_str.lower() in ("true", "1", "yes")
+
         self._telegram_token   = os.getenv("TELEGRAM_BOT_TOKEN")
         self._telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -103,11 +109,12 @@ class Executor(BaseAgent):
         # 설정 상태 로깅
         kis_ready = all([self._app_key, self._app_secret, self._account_no])
         tg_ready  = all([self._telegram_token, self._telegram_chat_id])
+        mode_str  = "DRY_RUN" if self._dry_run else ("MOCK" if self._is_mock else "REAL")
         self.log(
             "info",
             f"설정 로드 완료 — KIS {'준비됨' if kis_ready else '미설정'}, "
             f"텔레그램 {'준비됨' if tg_ready else '미설정'}, "
-            f"모드={'MOCK' if self._is_mock else 'REAL'}",
+            f"모드={mode_str}",
         )
 
     def _load_dca_config(self) -> None:
@@ -282,6 +289,28 @@ class Executor(BaseAgent):
             except Exception:
                 pass
             return {"status": "ERROR", "order_no": "", "message": f"주문 한도 초과: {reason}"}
+
+        # ── DRY_RUN: 실거래 안전장치. KIS API 호출 skip + 가짜 OK 반환 ──
+        if self._dry_run:
+            fake_order_no = f"DRYRUN_{uuid.uuid4().hex[:8]}"
+            fake_price = int(expected_price) if expected_price > 0 else 0
+            self.log(
+                "info",
+                f"[DRY_RUN] {action} 주문 시뮬레이션: {name}({code}) {qty}주 @ {fake_price:,}원"
+            )
+            try:
+                await self._send_telegram(
+                    f"🟡 [DRY_RUN] {action}\n{name}({code}) {qty}주 @ {fake_price:,}원"
+                )
+            except Exception:
+                pass
+            return {
+                "status": "OK",
+                "order_no": fake_order_no,
+                "message": "DRY_RUN 시뮬레이션",
+                "filled_qty": qty,
+                "filled_price": fake_price,
+            }
 
         tr_id = self._tr_order(action)
 
