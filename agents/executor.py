@@ -166,6 +166,12 @@ class Executor(BaseAgent):
         """주식체결 조회 TR_ID."""
         return "VTTC8001R" if self._is_mock else "TTTC8001R"
 
+    def _mode_label(self) -> str:
+        """현재 모드 라벨 (텔레그램 알림용)."""
+        if self._dry_run:
+            return "DRY_RUN"
+        return "MOCK" if self._is_mock else "REAL"
+
     # ------------------------------------------------------------------
     # KIS 토큰 발급
     # ------------------------------------------------------------------
@@ -675,6 +681,16 @@ class Executor(BaseAgent):
                                     mode="MOCK" if self._is_mock else "REAL",
                                 )
                                 closed_count += 1
+                                # 텔레그램 알림 — EMERGENCY_STOP_LOSS는 critical 이벤트
+                                try:
+                                    await self._send_telegram(
+                                        f"🚨 [EMERGENCY_STOP_LOSS] {name}({code}) [{self._mode_label()}]\n"
+                                        f"{filled_qty}주 긴급손절 @ {filled_price:,.0f}원\n"
+                                        f"수익률: {result_pct:+.2f}%\n"
+                                        f"사유: 매수 후 보호시간 + 큰 손실"
+                                    )
+                                except Exception:
+                                    pass
                             else:
                                 self.log("warning", f"[보호시간] {name}({code}) 긴급손절 미체결: {sell_order.get('message')}")
                         except Exception as exc:
@@ -791,6 +807,15 @@ class Executor(BaseAgent):
                     )
                     self.log("info", f"[청산] {name}({code}) 종료 완료: {result_pct:+.2f}%")
                     closed_count += 1
+                    # 텔레그램 알림 (활성 라벨: TRAILING_STOP / DYNAMIC_STOP_LOSS / EXIT_PLAN_STAGE_*)
+                    try:
+                        await self._send_telegram(
+                            f"[{exit_reason}] {name}({code}) [{self._mode_label()}]\n"
+                            f"{filled_qty}주 매도 @ {filled_price:,.0f}원\n"
+                            f"수익률: {result_pct:+.2f}%"
+                        )
+                    except Exception:
+                        pass
         except Exception as exc:
             self.log("warning", f"_check_stop_take 오류 (무시): {exc}")
         return closed_count
