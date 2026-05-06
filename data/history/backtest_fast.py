@@ -43,6 +43,8 @@ INDICATORS = {
     "us_10y":       ("bonds",      "us_10y"),
     "sp500":        ("us_index",    "sp500"),
     "dow":          ("us_index",    "dow"),
+    "foreign_net":     ("kr_market",  "foreign_net_market"),
+    "institution_net": ("kr_market",  "institution_net_market"),
 }
 
 THRESHOLDS = [1.0, 1.5, 2.0, 2.5, 3.0, -1.0, -1.5, -2.0, -2.5, -3.0]

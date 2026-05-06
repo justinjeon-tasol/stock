@@ -61,6 +61,8 @@ LEADING_INDICATORS = {
     "dow":           ("us_index",    "dow",           "다우"),
     "materials_xlb": ("sector_etf",  "materials_xlb", "XLB 소재ETF"),
     "industrial_xli":("sector_etf",  "industrial_xli","XLI 산업ETF"),
+    "foreign_net":     ("kr_market",   "foreign_net_market",     "외국인 순매수"),
+    "institution_net": ("kr_market",   "institution_net_market", "기관 순매수"),
 }
 
 # 시그널 임계값

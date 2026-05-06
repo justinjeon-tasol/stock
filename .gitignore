@@ -64,3 +64,6 @@ frontend_fix*.md
 
 # 빌드 로그 (자동 생성)
 frontend/build.log
+
+# BT 결과 백업 (회귀 비교용, 로컬에서만 보존)
+data/history/extended/backtest_results_baseline_*/
